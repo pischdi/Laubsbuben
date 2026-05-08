@@ -1,0 +1,2399 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a1d23">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dart Zähler">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%231a1d23'/><circle cx='90' cy='90' r='62' fill='%230d0e10'/><circle cx='90' cy='90' r='52' fill='%23eddcb1'/><circle cx='90' cy='90' r='40' fill='%230d0e10'/><circle cx='90' cy='90' r='30' fill='%23eddcb1'/><circle cx='90' cy='90' r='14' fill='%231f8a3e'/><circle cx='90' cy='90' r='6' fill='%23ce2029'/></svg>">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%231a1d23'/><circle cx='16' cy='16' r='10' fill='%23eddcb1'/><circle cx='16' cy='16' r='3' fill='%23ce2029'/></svg>">
+<title>Steel Dart Zähler</title>
+<style>
+  :root {
+    --bg: #1a1d23;
+    --panel: #252932;
+    --panel-2: #2e333d;
+    --accent: #e63946;
+    --accent-2: #4cc9f0;
+    --good: #06d6a0;
+    --warn: #ffb703;
+    --text: #e9ecef;
+    --muted: #9aa0a6;
+    --border: #3a3f4a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .app {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 12px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: .5px;
+  }
+  h1 span { color: var(--accent); }
+  .view-nav {
+    display: inline-flex; gap: 2px; padding: 3px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  }
+  .view-nav button {
+    background: transparent; border: none; padding: 8px 16px;
+    color: var(--muted); font-weight: 600; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 1px; border-radius: 7px;
+    cursor: pointer;
+  }
+  .view-nav button:hover { color: var(--text); }
+  .view-nav button.active {
+    background: var(--accent); color: white;
+  }
+  .view-nav button .badge {
+    display: inline-block; min-width: 18px; padding: 0 5px;
+    background: rgba(255,255,255,.2); border-radius: 9px;
+    font-size: 11px; margin-left: 6px;
+    line-height: 16px; text-align: center;
+  }
+  .view { display: block; }
+  .view[hidden] { display: none; }
+
+  .game-grid {
+    display: grid; grid-template-columns: 1.05fr 1fr; gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .game-grid { grid-template-columns: 1fr; }
+  }
+
+  .button-group {
+    display: inline-flex; gap: 0;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 3px;
+  }
+  .button-group button {
+    background: transparent; border: none;
+    padding: 8px 14px; color: var(--muted);
+    font-size: 14px; font-weight: 600;
+    border-radius: 6px; cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .button-group button:hover { color: var(--text); }
+  .button-group button.active {
+    background: var(--accent); color: white;
+  }
+  .button-group.subtle button.active {
+    background: var(--accent-2); color: #052832;
+  }
+  .setup-section {
+    margin-bottom: 16px;
+  }
+  .setup-section .section-label {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    font-weight: 600; margin-bottom: 6px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .panel h2 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+  }
+  .setup-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .setup-row label {
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 100px;
+  }
+  select, input[type="text"], input[type="number"], button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input[type="text"] { min-width: 0; flex: 1; }
+  input[type="number"] { width: 70px; }
+  button {
+    cursor: pointer;
+    transition: background .15s, transform .05s;
+  }
+  button:hover { background: #3a414e; }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary {
+    background: var(--accent); border-color: var(--accent); color: white; font-weight: 600;
+  }
+  button.primary:hover { background: #c92e3c; }
+  button.success {
+    background: var(--good); border-color: var(--good); color: #062c20; font-weight: 700;
+  }
+  button.ghost { background: transparent; }
+  .players-edit { display: flex; flex-direction: column; gap: 6px; }
+  .player-edit-row { display: flex; gap: 6px; align-items: center; }
+  .player-edit-row .pnum {
+    color: var(--muted); font-size: 12px; width: 20px; text-align: right;
+  }
+  .player-edit-row button { padding: 6px 9px; }
+
+  /* Dartboard */
+  .board-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px;
+  }
+  svg.board { width: 100%; max-width: 560px; height: auto; display: block; touch-action: manipulation; }
+  svg.board path, svg.board circle {
+    cursor: pointer;
+    transition: filter .1s, opacity .1s;
+  }
+  svg.board path:hover, svg.board circle.bull-target:hover {
+    filter: brightness(1.35);
+  }
+  svg.board text { pointer-events: none; user-select: none; font-weight: 700; }
+
+  .extra-row {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  }
+  .extra-row button { flex: 1; min-width: 90px; }
+
+  /* Scoreboard */
+  .players { display: flex; flex-direction: column; gap: 8px; }
+  .player {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+  }
+  .player.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(230, 57, 70, .25);
+  }
+  .player.winner .remaining { color: var(--good); }
+  .player .name { font-size: 16px; font-weight: 600; }
+  .player .meta {
+    font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+  }
+  .player .legs {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 8px;
+    min-width: 56px;
+  }
+  .player .legs .legs-num {
+    font-size: 22px; font-weight: 800; line-height: 1; color: var(--accent-2);
+  }
+  .player .legs .legs-lbl {
+    font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .player .remaining {
+    font-size: 32px; font-weight: 800; line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 70px;
+  }
+  .player.active .remaining { color: var(--accent); }
+  .visit {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) auto;
+    gap: 6px;
+    align-items: center;
+  }
+  .dart {
+    background: #1a1d23;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 6px 4px;
+    font-size: 13px;
+    text-align: center;
+    color: var(--muted);
+    min-height: 30px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dart.filled { color: var(--text); border-style: solid; border-color: var(--accent-2); }
+  .visit-sum {
+    font-weight: 700; font-size: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 6px 10px; border-radius: 6px;
+    min-width: 56px; text-align: center;
+  }
+
+  .controls {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+  }
+  .controls button { flex: 1; }
+
+  .status {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    min-height: 38px;
+  }
+  .status strong { color: var(--text); }
+  .status.bust { color: var(--warn); border-color: var(--warn); }
+  .status.win { color: var(--good); border-color: var(--good); background: rgba(6, 214, 160, .08); }
+  .status.checkout { color: var(--accent-2); border-color: var(--accent-2); }
+  .status .next-actions {
+    margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;
+  }
+
+  .legend {
+    display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--muted);
+    margin-top: 6px;
+  }
+  .legend span::before {
+    content: ""; display: inline-block; width: 10px; height: 10px;
+    margin-right: 5px; border-radius: 2px; vertical-align: middle;
+  }
+  .legend .l-tri::before { background: #ce2029; }
+  .legend .l-dbl::before { background: #1f8a3e; }
+  .legend .l-bull::before { background: #ce2029; }
+
+  /* Tabs & Stats */
+  .tabs {
+    display: flex; gap: 4px;
+  }
+  .tabs button {
+    padding: 4px 10px; font-size: 12px; border-radius: 6px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .tabs button.active {
+    background: var(--accent-2); border-color: var(--accent-2); color: #052832; font-weight: 700;
+  }
+  .stats-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stats-table th, .stats-table td {
+    padding: 6px 6px; text-align: right;
+    border-bottom: 1px solid var(--border);
+  }
+  .stats-table th:first-child, .stats-table td:first-child {
+    text-align: left;
+  }
+  .stats-table th {
+    color: var(--muted); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600;
+    border-bottom-color: #4a5060;
+  }
+  .stats-table td.player-name {
+    font-weight: 600; color: var(--text);
+  }
+  .stats-table tr.active td.player-name {
+    color: var(--accent);
+  }
+  .stats-table .big { font-weight: 700; color: var(--text); }
+  .stats-empty {
+    text-align: center; padding: 20px; color: var(--muted); font-size: 13px;
+  }
+  .stats-scroll {
+    max-width: 100%; overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .stats-scroll .stats-table th, .stats-scroll .stats-table td {
+    padding: 6px 5px; white-space: nowrap;
+  }
+  .hits-table tbody tr:nth-child(odd) td {
+    background: rgba(255, 255, 255, .015);
+  }
+  .top-hits {
+    display: grid; gap: 8px; margin-bottom: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .top-block {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .top-name {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600; margin-bottom: 6px;
+  }
+  .top-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .top-empty { font-size: 12px; color: var(--muted); font-style: italic; }
+  .chip {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip b { color: var(--accent-2); }
+
+  /* Player pool / quick-pick chips */
+  .player-pool {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    align-items: center; margin-top: 10px;
+    padding: 8px 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .pool-label {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600; margin-right: 4px;
+  }
+  .pool-chip {
+    cursor: pointer;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 13px;
+    color: var(--text);
+    transition: background .12s, border-color .12s;
+  }
+  .pool-chip:hover { background: #3a414e; }
+  .pool-chip.active {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    color: #052832;
+    font-weight: 600;
+  }
+  .pool-chip.filter-on {
+    background: var(--good);
+    border-color: var(--good);
+    color: #062c20;
+    font-weight: 600;
+  }
+  .pool-chip.filter-off {
+    opacity: .5;
+  }
+
+  /* Tournament */
+  .schedule-list {
+    display: flex; flex-direction: column; gap: 4px;
+    font-size: 13px; font-variant-numeric: tabular-nums;
+  }
+  .schedule-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center; gap: 8px;
+    padding: 6px 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .schedule-row.current {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(230, 57, 70, .2);
+  }
+  .schedule-row.played { opacity: .65; }
+  .schedule-row .marker {
+    font-weight: 700; color: var(--muted); text-align: center;
+  }
+  .schedule-row.current .marker { color: var(--accent); }
+  .schedule-row.played .marker { color: var(--good); }
+  .schedule-row .pairing { color: var(--text); }
+  .schedule-row .pairing .vs { color: var(--muted); margin: 0 6px; }
+  .schedule-row .result {
+    font-weight: 700; color: var(--accent-2);
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 8px;
+  }
+  .standings-table .rank { color: var(--muted); width: 28px; text-align: center; }
+  .standings-table .lead td { color: var(--good); }
+
+  /* History view */
+  .filter-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .filter-label {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600; min-width: 80px;
+  }
+  .history-meta {
+    font-size: 12px; color: var(--muted); margin: 12px 0 6px;
+  }
+  .history-meta strong { color: var(--text); }
+  .history-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .history-table th, .history-table td {
+    padding: 5px 8px; text-align: right;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table th:first-child, .history-table td:first-child {
+    text-align: left; color: var(--muted); font-weight: 400;
+  }
+  .history-table thead th {
+    color: var(--text); font-weight: 700; font-size: 13px;
+    border-bottom: 2px solid var(--accent-2);
+    background: var(--panel-2);
+    position: sticky; top: 0;
+  }
+  .history-table tbody tr:nth-child(odd) td {
+    background: rgba(255, 255, 255, .015);
+  }
+  .history-table .section-row td {
+    background: var(--panel-2);
+    color: var(--text); font-weight: 700;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+    text-align: left;
+    border-top: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 8px;
+  }
+  .history-table td.value {
+    color: var(--good); font-weight: 600;
+  }
+  .history-table td.zero {
+    color: var(--muted);
+  }
+  .history-empty {
+    text-align: center; padding: 40px 20px; color: var(--muted);
+    font-size: 14px;
+  }
+
+  .match-banner {
+    margin-top: 10px;
+    background: linear-gradient(135deg, rgba(6, 214, 160, .15), rgba(76, 201, 240, .1));
+    border: 1px solid var(--good);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .match-banner .title {
+    font-size: 18px; font-weight: 800; color: var(--good); margin-bottom: 4px;
+  }
+  .match-banner .sub { font-size: 13px; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1><span>●</span> Steel Dart Zähler</h1>
+    <nav class="view-nav" id="viewNav">
+      <button data-view="setup" class="active">Setup</button>
+      <button data-view="game">Spiel</button>
+      <button data-view="stats">Statistik</button>
+      <button data-view="history">Verlauf</button>
+    </nav>
+  </div>
+
+  <!-- SETUP VIEW -->
+  <section class="view view-setup" data-view="setup">
+    <div class="panel">
+      <div class="setup-section">
+        <div class="section-label">Spiel-Modus</div>
+        <div class="button-group" id="modeButtons">
+          <button data-mode="301">301</button>
+          <button data-mode="501" class="active">501</button>
+          <button data-mode="701">701</button>
+        </div>
+        <!-- hidden compat -->
+        <select id="mode" hidden>
+          <option value="301">301</option>
+          <option value="501" selected>501</option>
+          <option value="701">701</option>
+        </select>
+      </div>
+
+      <div class="setup-section">
+        <div class="section-label">Out-Regel</div>
+        <div class="button-group subtle" id="outButtons">
+          <button data-out="single">Single-Out</button>
+          <button data-out="double" class="active">Double-Out</button>
+          <button data-out="master">Master-Out (D/T)</button>
+        </div>
+        <select id="outRule" hidden>
+          <option value="double" selected>Double-Out</option>
+          <option value="single">Single-Out</option>
+          <option value="master">Master-Out (D/T)</option>
+        </select>
+      </div>
+
+      <div class="setup-section">
+        <div class="section-label">Match-Länge</div>
+        <div class="setup-row" style="margin-bottom: 0;">
+          <span style="font-size: 13px; color: var(--muted);">First to</span>
+          <input type="number" id="legsToWin" min="1" max="21" value="1">
+          <span style="font-size: 13px; color: var(--muted);">Legs</span>
+        </div>
+      </div>
+
+      <div class="setup-section">
+        <div class="section-label">Turnier</div>
+        <label style="font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="tournamentMode" style="width: 16px; height: 16px; cursor: pointer;">
+          Jeder gegen Jeden (Round-Robin)
+        </label>
+      </div>
+
+      <div class="setup-section">
+        <div class="section-label">Spieler</div>
+        <div class="players-edit" id="playersEdit"></div>
+        <div class="setup-row" style="margin-top: 8px; margin-bottom: 0;">
+          <button id="addPlayer">+ Spieler</button>
+        </div>
+        <div class="player-pool" id="playerPool" style="display:none;"></div>
+        <datalist id="knownPlayersList"></datalist>
+      </div>
+
+      <div class="setup-row" style="margin-top: 16px; margin-bottom: 0; gap: 8px;">
+        <button id="newGame" class="primary" style="flex: 2; padding: 12px; font-size: 15px;">▶ Match starten</button>
+        <button id="repeatLastBtn" style="flex: 1; padding: 12px; font-size: 14px;" title="Mit den zuletzt gespeicherten Einstellungen starten">↻ Letztes wiederholen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME VIEW -->
+  <section class="view view-game" data-view="game" hidden>
+    <div class="game-grid">
+      <div class="panel">
+        <h2><span id="legHeader">Spielstand</span></h2>
+        <div class="players" id="scoreboard"></div>
+        <div class="status" id="status">Spiel bereit. Klicke auf ein Feld der Scheibe.</div>
+        <div class="controls">
+          <button id="undoTurn">Aufnahme rückgängig</button>
+          <button id="resetGame">Match neustarten</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Dartscheibe</h2>
+        <div class="board-wrap">
+          <svg class="board" id="board" viewBox="-260 -260 520 520" aria-label="Dartscheibe"></svg>
+          <div class="extra-row">
+            <button data-throw="0,0">Miss (0)</button>
+            <button id="undoLast">↶ Letzter Wurf</button>
+            <button id="endTurn">Aufnahme beenden</button>
+          </div>
+          <div class="legend">
+            <span class="l-tri">Triple</span>
+            <span class="l-dbl">Double</span>
+            <span class="l-bull">Bull 25 / Bullseye 50</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORY VIEW -->
+  <section class="view view-history" data-view="history" hidden>
+    <div class="panel">
+      <h2>
+        <span>Verlauf · Statistiken</span>
+        <span style="display: flex; gap: 6px; align-items: center;">
+          <button id="historyExport" title="Verlauf exportieren">↓ Export</button>
+          <button id="historyImport" title="Verlauf importieren">↑ Import</button>
+          <button id="historyClear" title="Verlauf löschen">🗑</button>
+        </span>
+      </h2>
+
+      <div class="filter-row">
+        <div class="filter-label">Zeitraum</div>
+        <div class="button-group" id="periodButtons">
+          <button data-period="day">Heute</button>
+          <button data-period="week">7 Tage</button>
+          <button data-period="month">30 Tage</button>
+          <button data-period="all" class="active">Alles</button>
+          <button data-period="custom">Benutzerdef.</button>
+        </div>
+      </div>
+      <div class="filter-row" id="customRange" hidden>
+        <div class="filter-label">Von – Bis</div>
+        <input type="date" id="periodFrom">
+        <input type="date" id="periodTo">
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">Modus</div>
+        <div class="button-group subtle" id="modeFilter">
+          <button data-mfilter="all" class="active">Alle</button>
+          <button data-mfilter="301">301</button>
+          <button data-mfilter="501">501</button>
+          <button data-mfilter="701">701</button>
+        </div>
+      </div>
+      <div class="filter-row" id="historyPlayerFilterRow" style="display:none;">
+        <div class="filter-label">Spieler</div>
+        <div class="player-pool" id="historyPlayerFilter" style="margin: 0; flex: 1;"></div>
+      </div>
+
+      <div id="historyMeta" class="history-meta"></div>
+      <div id="historyTable"></div>
+    </div>
+  </section>
+
+  <!-- STATS VIEW -->
+  <section class="view view-stats" data-view="stats" hidden>
+    <div class="panel">
+      <div id="tournamentPanel" style="display:none;">
+        <h2><span>Turnier-Tabelle</span></h2>
+        <div id="tournamentStandings"></div>
+        <h2 style="margin-top: 14px;"><span>Spielplan</span></h2>
+        <div id="tournamentSchedule"></div>
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 18px 0;">
+      </div>
+
+      <h2>
+        <span>Statistik</span>
+        <span class="tabs">
+          <button data-tab="leg" class="active">Leg</button>
+          <button data-tab="match">Match</button>
+          <button data-tab="hits">Hits</button>
+        </span>
+      </h2>
+      <div id="statsContainer"></div>
+
+      <div style="margin-top: 16px; font-size: 12px; color: var(--muted); line-height: 1.5;">
+        <strong style="color: var(--text);">Regeln:</strong> Jeder Spieler startet bei der gewählten Punktzahl und muss exakt auf 0 kommen.
+        Pro Aufnahme werden 3 Darts geworfen. Beim Double-Out muss der finale Dart in ein Doppel-Feld oder Bullseye treffen.
+        Bei „First to N Legs" rotiert der Anwurf (Bull-Off) Leg für Leg.
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+// === Dartboard geometry & rendering ===
+const NUMBERS = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+const R = {
+  innerBull: 12, outerBull: 30,
+  tripleInner: 130, tripleOuter: 142,
+  doubleInner: 200, doubleOuter: 215
+};
+const COLOR = {
+  bgRing: "#0d0e10",
+  numText: "#f8f9fa",
+  singleLight: "#eddcb1",
+  singleDark: "#0d0e10",
+  doubleRed: "#ce2029",
+  doubleGreen: "#1f8a3e",
+  bullOuter: "#1f8a3e",
+  bullInner: "#ce2029",
+  stroke: "#0a0a0a"
+};
+
+function deg2rad(d) { return d * Math.PI / 180; }
+function donutWedge(r1, r2, startDeg, endDeg) {
+  const a1 = deg2rad(startDeg), a2 = deg2rad(endDeg);
+  const x1 = r1 * Math.cos(a1), y1 = r1 * Math.sin(a1);
+  const x2 = r2 * Math.cos(a1), y2 = r2 * Math.sin(a1);
+  const x3 = r2 * Math.cos(a2), y3 = r2 * Math.sin(a2);
+  const x4 = r1 * Math.cos(a2), y4 = r1 * Math.sin(a2);
+  return `M ${x1} ${y1} L ${x2} ${y2} A ${r2} ${r2} 0 0 1 ${x3} ${y3} L ${x4} ${y4} A ${r1} ${r1} 0 0 0 ${x1} ${y1} Z`;
+}
+
+function buildBoard() {
+  const svg = document.getElementById("board");
+  const ns = "http://www.w3.org/2000/svg";
+  svg.innerHTML = "";
+  const back = document.createElementNS(ns, "circle");
+  back.setAttribute("cx", 0); back.setAttribute("cy", 0);
+  back.setAttribute("r", 250);
+  back.setAttribute("fill", COLOR.bgRing);
+  svg.appendChild(back);
+
+  for (let i = 0; i < 20; i++) {
+    const num = NUMBERS[i];
+    const center = -90 + i * 18;
+    const start = center - 9, end = center + 9;
+    const isLight = (i % 2 === 1);
+    const singleColor = isLight ? COLOR.singleLight : COLOR.singleDark;
+    const dtIsRed = !isLight;
+    const dtColor = dtIsRed ? COLOR.doubleRed : COLOR.doubleGreen;
+
+    addSeg(svg, ns, donutWedge(R.tripleOuter, R.doubleInner, start, end), singleColor, num, "S");
+    addSeg(svg, ns, donutWedge(R.doubleInner, R.doubleOuter, start, end), dtColor, num, "D");
+    addSeg(svg, ns, donutWedge(R.outerBull, R.tripleInner, start, end), singleColor, num, "S");
+    addSeg(svg, ns, donutWedge(R.tripleInner, R.tripleOuter, start, end), dtColor, num, "T");
+
+    const lblR = R.doubleOuter + 22;
+    const lx = lblR * Math.cos(deg2rad(center));
+    const ly = lblR * Math.sin(deg2rad(center));
+    const t = document.createElementNS(ns, "text");
+    t.setAttribute("x", lx); t.setAttribute("y", ly);
+    t.setAttribute("fill", COLOR.numText);
+    t.setAttribute("font-size", "26");
+    t.setAttribute("text-anchor", "middle");
+    t.setAttribute("dominant-baseline", "central");
+    t.textContent = num;
+    svg.appendChild(t);
+  }
+
+  const ob = document.createElementNS(ns, "circle");
+  ob.setAttribute("cx", 0); ob.setAttribute("cy", 0);
+  ob.setAttribute("r", R.outerBull);
+  ob.setAttribute("fill", COLOR.bullOuter);
+  ob.setAttribute("stroke", COLOR.stroke);
+  ob.setAttribute("stroke-width", "0.6");
+  ob.classList.add("bull-target");
+  ob.addEventListener("click", () => recordThrow(25, 1, "Bull 25"));
+  svg.appendChild(ob);
+
+  const ib = document.createElementNS(ns, "circle");
+  ib.setAttribute("cx", 0); ib.setAttribute("cy", 0);
+  ib.setAttribute("r", R.innerBull);
+  ib.setAttribute("fill", COLOR.bullInner);
+  ib.setAttribute("stroke", COLOR.stroke);
+  ib.setAttribute("stroke-width", "0.6");
+  ib.classList.add("bull-target");
+  ib.addEventListener("click", () => recordThrow(25, 2, "Bullseye"));
+  svg.appendChild(ib);
+}
+
+function addSeg(svg, ns, d, fill, num, kind) {
+  const p = document.createElementNS(ns, "path");
+  p.setAttribute("d", d);
+  p.setAttribute("fill", fill);
+  p.setAttribute("stroke", COLOR.stroke);
+  p.setAttribute("stroke-width", "0.6");
+  let mult = 1; let label = `${num}`;
+  if (kind === "D") { mult = 2; label = `D${num}`; }
+  if (kind === "T") { mult = 3; label = `T${num}`; }
+  p.addEventListener("click", () => recordThrow(num, mult, label));
+  svg.appendChild(p);
+}
+
+// === Game state ===
+const state = {
+  mode: 501,
+  outRule: "double",
+  players: [
+    { name: "Spieler 1" },
+    { name: "Spieler 2" }
+  ],
+  legsToWin: 1,
+  legsWon: [],
+  legs: [],            // completed legs in current match: { winnerIdx, turns, startPlayer }
+  scores: [],
+  history: [],         // current leg turns
+  currentVisit: [],
+  currentPlayer: 0,    // global player index
+  legStartPlayer: 0,   // global player index
+  legWinner: -1,       // global player index, -1 if leg in progress
+  matchWinner: -1,     // global player index, -1 if match in progress
+  statsTab: "leg",
+  // Active player roster for the CURRENT match (subset of state.players indices).
+  // For single-match mode = all players. For tournament = the two paired players.
+  activePlayerIndices: [],
+  // Round-robin tournament
+  tournament: {
+    active: false,
+    schedule: [],     // [{p1, p2, played, winnerIdx, legsP1, legsP2}]
+    currentIdx: 0,
+    finished: false
+  }
+};
+
+function startNewMatch() {
+  state.mode = parseInt(document.getElementById("mode").value, 10);
+  state.outRule = document.getElementById("outRule").value;
+  state.legsToWin = Math.max(1, parseInt(document.getElementById("legsToWin").value, 10) || 1);
+  state.tournament.active = document.getElementById("tournamentMode").checked;
+  state.players = [...document.querySelectorAll("#playersEdit input")].map((inp, i) => ({
+    name: inp.value.trim() || `Spieler ${i+1}`
+  }));
+  if (state.players.length === 0) state.players = [{ name: "Spieler 1" }];
+
+  // Persist setup so it's restored on next visit / can be repeated
+  saveSetup();
+
+  // Tournament needs at least 2 players. Below 2, fall back to single match.
+  const useTournament = state.tournament.active && state.players.length >= 2;
+  if (useTournament) {
+    state.tournament.schedule = generateRoundRobin(state.players.length);
+    state.tournament.currentIdx = 0;
+    state.tournament.finished = false;
+    startTournamentMatch(0);
+    const m = state.tournament.schedule[0];
+    setStatus(`Turnier gestartet – ${state.tournament.schedule.length} Begegnungen. Match 1: <strong>${escapeHtml(state.players[m.p1].name)}</strong> vs <strong>${escapeHtml(state.players[m.p2].name)}</strong>.`);
+  } else {
+    state.tournament.active = false;
+    state.tournament.schedule = [];
+    state.tournament.currentIdx = 0;
+    state.tournament.finished = false;
+    initSingleMatch();
+    const tournament = state.legsToWin > 1 ? ` – First to ${state.legsToWin} Legs` : "";
+    setStatus(`Neues Match ${state.mode}${tournament} – ${state.players[state.currentPlayer].name} beginnt.`);
+  }
+  renderAll();
+}
+
+function initSingleMatch() {
+  state.activePlayerIndices = state.players.map((_, i) => i);
+  state.scores = state.players.map(() => state.mode);
+  state.legsWon = state.players.map(() => 0);
+  state.legs = [];
+  state.history = [];
+  state.currentVisit = [];
+  state.legStartPlayer = state.activePlayerIndices[0];
+  state.currentPlayer = state.legStartPlayer;
+  state.legWinner = -1;
+  state.matchWinner = -1;
+}
+
+function generateRoundRobin(n) {
+  if (n < 2) return [];
+  // All unique pairings
+  const remaining = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      remaining.push({ p1: i, p2: j });
+    }
+  }
+  // Greedy schedule: at each step, pick the pairing that maximizes
+  //  (minimum rest of either involved player), then total rest of both,
+  //  then prefers the pairing whose players have played fewer matches so far.
+  // This evens out wait times between consecutive matches per player.
+  const schedule = [];
+  const lastPlayed = new Array(n).fill(-Infinity);
+  const playedCount = new Array(n).fill(0);
+
+  while (remaining.length > 0) {
+    const idx = schedule.length;
+    let bestK = 0;
+    let bestKey = null;
+    remaining.forEach((m, k) => {
+      const r1 = idx - lastPlayed[m.p1];
+      const r2 = idx - lastPlayed[m.p2];
+      const minRest = Math.min(r1, r2);
+      const sumRest = (isFinite(r1) ? r1 : 1e9) + (isFinite(r2) ? r2 : 1e9);
+      const balance = -(playedCount[m.p1] + playedCount[m.p2]);
+      const key = [minRest === Infinity ? 1e9 : minRest, sumRest, balance];
+      if (bestKey === null
+          || key[0] > bestKey[0]
+          || (key[0] === bestKey[0] && key[1] > bestKey[1])
+          || (key[0] === bestKey[0] && key[1] === bestKey[1] && key[2] > bestKey[2])) {
+        bestK = k;
+        bestKey = key;
+      }
+    });
+    const chosen = remaining.splice(bestK, 1)[0];
+    schedule.push({
+      p1: chosen.p1, p2: chosen.p2,
+      played: false, winnerIdx: -1, legsP1: 0, legsP2: 0
+    });
+    lastPlayed[chosen.p1] = idx;
+    lastPlayed[chosen.p2] = idx;
+    playedCount[chosen.p1]++;
+    playedCount[chosen.p2]++;
+  }
+  return schedule;
+}
+
+function startTournamentMatch(idx) {
+  const m = state.tournament.schedule[idx];
+  state.activePlayerIndices = [m.p1, m.p2];
+  state.scores = state.players.map((_, i) =>
+    (i === m.p1 || i === m.p2) ? state.mode : 0
+  );
+  state.legsWon = state.players.map(() => 0);
+  state.legs = [];
+  state.history = [];
+  state.currentVisit = [];
+  state.legStartPlayer = m.p1;
+  state.currentPlayer = m.p1;
+  state.legWinner = -1;
+  state.matchWinner = -1;
+}
+
+function startNextTournamentMatch() {
+  if (!state.tournament.active || state.tournament.finished) return;
+  const nextIdx = state.tournament.currentIdx + 1;
+  if (nextIdx >= state.tournament.schedule.length) {
+    state.tournament.finished = true;
+    renderAll();
+    showTournamentEnd();
+    return;
+  }
+  state.tournament.currentIdx = nextIdx;
+  startTournamentMatch(nextIdx);
+  renderAll();
+  const m = state.tournament.schedule[nextIdx];
+  setStatus(`Match ${nextIdx + 1} von ${state.tournament.schedule.length}: <strong>${escapeHtml(state.players[m.p1].name)}</strong> vs <strong>${escapeHtml(state.players[m.p2].name)}</strong>.`);
+}
+
+function startNextLeg() {
+  if (state.matchWinner !== -1) return;
+  // Reset scores only for active players
+  state.scores = state.players.map((_, i) =>
+    state.activePlayerIndices.includes(i) ? state.mode : 0
+  );
+  state.history = [];
+  state.currentVisit = [];
+  // Rotate legStartPlayer within active set
+  const ai = state.activePlayerIndices.indexOf(state.legStartPlayer);
+  state.legStartPlayer = state.activePlayerIndices[(ai + 1) % state.activePlayerIndices.length];
+  state.currentPlayer = state.legStartPlayer;
+  state.legWinner = -1;
+  renderAll();
+  setStatus(`Leg ${state.legs.length + 1} – ${state.players[state.currentPlayer].name} beginnt.`);
+}
+
+function isFinishingDartValid(mult) {
+  if (state.outRule === "double") return mult === 2;
+  if (state.outRule === "master") return mult === 2 || mult === 3;
+  return true;
+}
+
+function recordThrow(num, mult, label) {
+  if (state.matchWinner !== -1 || state.legWinner !== -1) return;
+  if (state.currentVisit.length >= 3) {
+    setStatus("Aufnahme voll – bitte beenden oder rückgängig machen.", "warn");
+    return;
+  }
+  const dart = { value: num * mult, mult, num, label };
+  state.currentVisit.push(dart);
+
+  const p = state.currentPlayer;
+  const before = state.scores[p];
+  const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
+  const after = before - visitSum;
+  const isLastDart = state.currentVisit.length === 3;
+  const isCheckoutAttempt = after === 0;
+  const isBust = after < 0
+                 || (state.outRule === "double" && after === 1)
+                 || (isCheckoutAttempt && !isFinishingDartValid(mult));
+
+  renderScoreboard();
+  renderStats();
+
+  if (isBust) {
+    setStatus(`<strong>${state.players[p].name}: BUST!</strong> Aufnahme verworfen.`, "bust");
+    finalizeTurn(true);
+    return;
+  }
+  if (after === 0 && isFinishingDartValid(mult)) {
+    state.scores[p] = 0;
+    state.history.push({ playerIdx: p, darts: [...state.currentVisit], before, after: 0, bust: false });
+    state.currentVisit = [];
+    handleLegWon(p);
+    return;
+  }
+  if (isLastDart) {
+    setStatus(`${state.players[p].name}: ${visitSum} – Aufnahme beendet.`);
+    finalizeTurn(false);
+  } else {
+    const remaining = before - visitSum;
+    let hint = `${state.players[p].name}: ${label} → ${visitSum} bisher. Rest ${remaining}.`;
+    if (remaining <= 170 && remaining > 0) {
+      const co = checkoutHint(remaining, 3 - state.currentVisit.length, state.outRule);
+      if (co) hint += ` Checkout: ${co}.`;
+    }
+    setStatus(hint, remaining <= 170 ? "checkout" : null);
+  }
+}
+
+function handleLegWon(p) {
+  state.legWinner = p;
+  state.legsWon[p]++;
+  state.legs.push({
+    winnerIdx: p,
+    turns: state.history.slice(),
+    startPlayer: state.legStartPlayer
+  });
+  if (state.legsWon[p] >= state.legsToWin) {
+    state.matchWinner = p;
+  }
+
+  // In tournament mode, save the match result when this match concludes
+  if (state.tournament.active && state.matchWinner !== -1) {
+    const m = state.tournament.schedule[state.tournament.currentIdx];
+    m.played = true;
+    m.winnerIdx = state.matchWinner;
+    m.legsP1 = state.legsWon[m.p1];
+    m.legsP2 = state.legsWon[m.p2];
+  }
+  // Persist to history when a match ends
+  if (state.matchWinner !== -1) {
+    recordCompletedMatch();
+  }
+
+  renderAll();
+  const activeNames = state.activePlayerIndices
+    .map(i => `${escapeHtml(state.players[i].name)} ${state.legsWon[i]}`).join(" · ");
+
+  if (state.matchWinner !== -1) {
+    if (state.tournament.active) {
+      const isLast = state.tournament.currentIdx + 1 >= state.tournament.schedule.length;
+      if (isLast) {
+        showTournamentEnd();
+      } else {
+        const next = state.tournament.schedule[state.tournament.currentIdx + 1];
+        setStatus(
+          `<strong>🎯 ${state.players[p].name} gewinnt Match ${state.tournament.currentIdx + 1}!</strong> (${activeNames})<br>
+           Nächste Begegnung: <strong>${escapeHtml(state.players[next.p1].name)}</strong> vs <strong>${escapeHtml(state.players[next.p2].name)}</strong>
+           <span class="next-actions">
+             <button onclick="startNextTournamentMatch()" class="success">Nächstes Match →</button>
+           </span>`,
+          "win"
+        );
+      }
+    } else {
+      setStatus(
+        `<strong>🏆 ${state.players[p].name} gewinnt das Match!</strong><br>
+         Endstand Legs: ${activeNames}
+         <span class="next-actions">
+           <button onclick="repeatLast()" class="success">↻ Wiederholen</button>
+           <button onclick="setView('setup')">Setup ändern</button>
+         </span>`,
+        "win"
+      );
+    }
+  } else {
+    setStatus(
+      `<strong>🎯 ${state.players[p].name} gewinnt Leg ${state.legs.length}!</strong><br>
+       Stand: ${activeNames} (First to ${state.legsToWin})
+       <span class="next-actions">
+         <button onclick="startNextLeg()" class="success">Nächstes Leg →</button>
+       </span>`,
+      "win"
+    );
+  }
+}
+
+function showTournamentEnd() {
+  state.tournament.finished = true;
+  const standings = computeStandings();
+  const winner = standings[0];
+  setStatus(
+    `<strong>🏆 Turnier-Sieger: ${escapeHtml(state.players[winner.idx].name)}!</strong><br>
+     ${standings.map((s, r) => `${r + 1}. ${escapeHtml(state.players[s.idx].name)} (${s.wins}-${s.losses}, Legs ${s.legsFor}:${s.legsAgainst})`).join(" · ")}
+     <span class="next-actions">
+       <button onclick="repeatLast()" class="success">↻ Turnier wiederholen</button>
+       <button onclick="setView('setup')">Setup ändern</button>
+     </span>`,
+    "win"
+  );
+  // Nach Turnierende automatisch zur Statistik-/Verlauf-Ansicht wechseln,
+  // damit man die kompletten Auswertungen sofort sieht.
+  setView("history");
+}
+
+function computeStandings() {
+  const stats = state.players.map((_, i) => ({
+    idx: i, wins: 0, losses: 0, legsFor: 0, legsAgainst: 0, played: 0
+  }));
+  state.tournament.schedule.forEach(m => {
+    if (!m.played) return;
+    stats[m.p1].played++; stats[m.p2].played++;
+    stats[m.p1].legsFor += m.legsP1; stats[m.p1].legsAgainst += m.legsP2;
+    stats[m.p2].legsFor += m.legsP2; stats[m.p2].legsAgainst += m.legsP1;
+    if (m.winnerIdx === m.p1) { stats[m.p1].wins++; stats[m.p2].losses++; }
+    else if (m.winnerIdx === m.p2) { stats[m.p2].wins++; stats[m.p1].losses++; }
+  });
+  // Sort: wins desc, then leg diff desc, then legsFor desc
+  stats.sort((a, b) => {
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    const da = a.legsFor - a.legsAgainst, db = b.legsFor - b.legsAgainst;
+    if (db !== da) return db - da;
+    return b.legsFor - a.legsFor;
+  });
+  return stats;
+}
+
+function finalizeTurn(bust) {
+  const p = state.currentPlayer;
+  const before = state.scores[p];
+  const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
+  const after = bust ? before : before - visitSum;
+  state.scores[p] = after;
+  state.history.push({
+    playerIdx: p,
+    darts: [...state.currentVisit],
+    before, after, bust
+  });
+  state.currentVisit = [];
+  // Advance to next active player
+  const ai = state.activePlayerIndices.indexOf(p);
+  state.currentPlayer = state.activePlayerIndices[(ai + 1) % state.activePlayerIndices.length];
+  renderAll();
+}
+
+function undoLastDart() {
+  // Revert match-end snapshot if we're past it
+  if (state.matchWinner !== -1) {
+    const last = state.legs[state.legs.length - 1];
+    if (last) {
+      state.matchWinner = -1;
+      state.legWinner = -1;
+      state.legsWon[last.winnerIdx]--;
+      state.legs.pop();
+      state.history = last.turns.slice();
+      state.scores = state.players.map(() => state.mode);
+      // recompute scores for this leg up to the previous-to-last turn
+      const winningTurn = state.history.pop();
+      replayHistoryScores();
+      state.currentPlayer = winningTurn.playerIdx;
+      state.scores[winningTurn.playerIdx] = winningTurn.before;
+      state.currentVisit = winningTurn.darts.slice(0, -1);
+      renderAll();
+      setStatus("Match-Sieg rückgängig.");
+      return;
+    }
+  }
+  if (state.legWinner !== -1) {
+    const last = state.legs[state.legs.length - 1];
+    if (last) {
+      state.legWinner = -1;
+      state.legsWon[last.winnerIdx]--;
+      state.legs.pop();
+      state.history = last.turns.slice();
+      state.scores = state.players.map(() => state.mode);
+      const winningTurn = state.history.pop();
+      replayHistoryScores();
+      state.currentPlayer = winningTurn.playerIdx;
+      state.scores[winningTurn.playerIdx] = winningTurn.before;
+      state.currentVisit = winningTurn.darts.slice(0, -1);
+      renderAll();
+      setStatus("Leg-Sieg rückgängig.");
+      return;
+    }
+  }
+  if (state.currentVisit.length > 0) {
+    state.currentVisit.pop();
+    renderAll();
+    setStatus("Letzter Dart rückgängig.");
+    return;
+  }
+  if (state.history.length === 0) {
+    setStatus("Nichts zum Rückgängigmachen.");
+    return;
+  }
+  const last = state.history.pop();
+  state.scores[last.playerIdx] = last.before;
+  state.currentPlayer = last.playerIdx;
+  state.currentVisit = last.darts.slice(0, -1);
+  renderAll();
+  setStatus(`Aufnahme von ${state.players[last.playerIdx].name} – letzter Dart entfernt.`);
+}
+
+function replayHistoryScores() {
+  state.scores = state.players.map(() => state.mode);
+  state.history.forEach(t => {
+    if (!t.bust) state.scores[t.playerIdx] -= (t.before - t.after);
+  });
+}
+
+function undoTurn() {
+  if (state.currentVisit.length > 0) {
+    state.currentVisit = [];
+    renderAll();
+    setStatus("Aktuelle Aufnahme zurückgesetzt.");
+    return;
+  }
+  if (state.legWinner !== -1 || state.matchWinner !== -1) {
+    undoLastDart(); // delegate
+    return;
+  }
+  if (state.history.length === 0) return;
+  const last = state.history.pop();
+  state.scores[last.playerIdx] = last.before;
+  state.currentPlayer = last.playerIdx;
+  state.currentVisit = [];
+  renderAll();
+  setStatus(`Aufnahme von ${state.players[last.playerIdx].name} komplett rückgängig.`);
+}
+
+// === Statistics ===
+function aggregateStats(playerIdx, legSets) {
+  let darts = 0, scored = 0;
+  let f9scored = 0, f9darts = 0;
+  let highestVisit = 0, highestDart = 0;
+  let c180 = 0, c140 = 0, c100 = 0;
+  let highestCheckout = 0;
+  let bestLegDarts = Infinity;
+  let legsWonCount = 0;
+  let triples = 0, doubles = 0, singles = 0;
+  let bullsHit = 0, bullseyesHit = 0;
+  let misses = 0, busts = 0;
+  const segCounts = {};
+
+  legSets.forEach(leg => {
+    const pTurns = leg.turns.filter(t => t.playerIdx === playerIdx);
+    let f9scoredLeg = 0, f9dartsLeg = 0, dartsCounter = 0;
+    pTurns.forEach(t => {
+      const visitDarts = t.darts.length;
+      const visitSum = t.darts.reduce((s, d) => s + d.value, 0);
+      const visitScore = t.bust ? 0 : (t.before - t.after);
+      darts += visitDarts;
+      scored += visitScore;
+      if (t.bust) busts++;
+
+      if (dartsCounter < 9) {
+        const remaining = 9 - dartsCounter;
+        if (visitDarts <= remaining) {
+          f9scoredLeg += visitSum;
+          f9dartsLeg += visitDarts;
+        }
+      }
+      dartsCounter += visitDarts;
+
+      if (!t.bust) {
+        if (visitSum === 180) c180++;
+        else if (visitSum >= 140) c140++;
+        else if (visitSum >= 100) c100++;
+        if (visitSum > highestVisit) highestVisit = visitSum;
+      }
+
+      t.darts.forEach(d => {
+        if (d.value > highestDart) highestDart = d.value;
+        const key = segmentKey(d);
+        segCounts[key] = (segCounts[key] || 0) + 1;
+        if (key === "MISS") misses++;
+        else if (key === "BULLSEYE") bullseyesHit++;
+        else if (key === "BULL") bullsHit++;
+        else if (d.mult === 3) triples++;
+        else if (d.mult === 2) doubles++;
+        else singles++;
+      });
+    });
+    f9scored += f9scoredLeg;
+    f9darts += f9dartsLeg;
+    if (leg.winnerIdx === playerIdx) {
+      legsWonCount++;
+      const winningTurn = pTurns[pTurns.length - 1];
+      if (winningTurn) {
+        const checkoutScore = winningTurn.before - winningTurn.after;
+        if (checkoutScore > highestCheckout) highestCheckout = checkoutScore;
+        const dartsThisLeg = pTurns.reduce((s, t) => s + t.darts.length, 0);
+        if (dartsThisLeg < bestLegDarts) bestLegDarts = dartsThisLeg;
+      }
+    }
+  });
+
+  return {
+    darts, scored,
+    avg: darts > 0 ? scored / darts * 3 : 0,
+    avgPerDart: darts > 0 ? scored / darts : 0,
+    f9avg: f9darts > 0 ? f9scored / f9darts * 3 : 0,
+    highestVisit, highestDart,
+    c180, c140, c100,
+    highestCheckout,
+    bestLeg: bestLegDarts === Infinity ? null : bestLegDarts,
+    legsWonCount,
+    triples, doubles, singles,
+    bullsHit, bullseyesHit,
+    misses, busts,
+    segCounts
+  };
+}
+
+function segmentKey(d) {
+  if (d.value === 0) return "MISS";
+  if (d.num === 25) return d.mult === 2 ? "BULLSEYE" : "BULL";
+  return (d.mult === 3 ? "T" : d.mult === 2 ? "D" : "S") + d.num;
+}
+
+function segmentLabel(k) {
+  if (k === "MISS") return "Miss (0)";
+  if (k === "BULLSEYE") return "Bullseye (50)";
+  if (k === "BULL") return "Bull (25)";
+  return k;
+}
+
+function segmentValue(k) {
+  if (k === "MISS") return 0;
+  if (k === "BULLSEYE") return 50;
+  if (k === "BULL") return 25;
+  const mult = k[0] === "T" ? 3 : k[0] === "D" ? 2 : 1;
+  return parseInt(k.slice(1), 10) * mult;
+}
+
+function getLegSets(scope) {
+  if (scope === "leg") {
+    return state.history.length > 0 ? [{ turns: state.history, winnerIdx: state.legWinner }] : [];
+  }
+  const legSets = state.legs.slice();
+  // Only include current history if leg isn't done yet (otherwise it's already in state.legs)
+  if (state.history.length > 0 && state.legWinner === -1) {
+    legSets.push({ turns: state.history, winnerIdx: -1 });
+  }
+  return legSets;
+}
+
+function renderStats() {
+  const container = document.getElementById("statsContainer");
+  if (state.players.length === 0) {
+    container.innerHTML = '<div class="stats-empty">Keine Spieler.</div>';
+    return;
+  }
+  if (state.statsTab === "hits") {
+    renderHitsTab(container);
+    return;
+  }
+  const scope = state.statsTab; // "leg" or "match"
+  const legSets = getLegSets(scope);
+  if (legSets.length === 0) {
+    container.innerHTML = `<div class="stats-empty">Noch keine Würfe ${scope === "leg" ? "in diesem Leg" : "im Match"}.</div>`;
+    return;
+  }
+  const isMatch = scope === "match";
+  // Show stats only for the active match's players
+  const indices = state.activePlayerIndices.length > 0 ? state.activePlayerIndices : state.players.map((_, i) => i);
+  const allStats = indices.map(i => aggregateStats(i, legSets));
+
+  const rows = indices.map((i, slot) => {
+    const pl = state.players[i];
+    const s = allStats[slot];
+    const isActive = (i === state.currentPlayer && state.matchWinner === -1 && state.legWinner === -1);
+    return `<tr class="${isActive ? "active" : ""}">
+      <td class="player-name">${escapeHtml(pl.name)}</td>
+      ${isMatch ? `<td class="big">${state.legsWon[i]}</td>` : ""}
+      <td class="big">${s.avg.toFixed(2)}</td>
+      <td>${s.f9avg.toFixed(2)}</td>
+      <td>${s.highestVisit || "–"}</td>
+      <td>${s.highestDart || "–"}</td>
+      <td>${s.c180}</td>
+      <td>${s.c140}</td>
+      <td>${s.c100}</td>
+      <td>${s.highestCheckout || "–"}</td>
+      ${isMatch ? `<td>${s.bestLeg ?? "–"}</td>` : ""}
+      <td>${s.triples}</td>
+      <td>${s.doubles}</td>
+      <td>${s.bullsHit}</td>
+      <td>${s.bullseyesHit}</td>
+      <td>${s.misses}</td>
+      <td>${s.busts}</td>
+      <td>${s.darts}</td>
+    </tr>`;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="stats-scroll">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Spieler</th>
+            ${isMatch ? "<th>Legs</th>" : ""}
+            <th title="3-Dart-Durchschnitt">Ø 3D</th>
+            <th title="Durchschnitt der ersten 9 Darts pro Leg">First 9</th>
+            <th title="Höchste Aufnahme (3 Darts)">Hi-V</th>
+            <th title="Höchster Einzel-Dart">Hi-D</th>
+            <th>180</th>
+            <th title="140 – 179">140+</th>
+            <th title="100 – 139">100+</th>
+            <th title="Höchster Checkout">Hi-Co</th>
+            ${isMatch ? "<th title='Wenigste Darts in einem gewonnenen Leg'>Best Leg</th>" : ""}
+            <th title="Triples getroffen">T</th>
+            <th title="Doubles getroffen">D</th>
+            <th title="Bull (25)">Bull</th>
+            <th title="Bullseye (50)">B-eye</th>
+            <th title="Misses (0)">Miss</th>
+            <th title="Busts">Bust</th>
+            <th title="Geworfene Darts">Darts</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderHitsTab(container) {
+  const legSets = getLegSets("match");
+  if (legSets.length === 0) {
+    container.innerHTML = '<div class="stats-empty">Noch keine Würfe im Match.</div>';
+    return;
+  }
+  const indices = state.activePlayerIndices.length > 0 ? state.activePlayerIndices : state.players.map((_, i) => i);
+  const allStats = indices.map(i => aggregateStats(i, legSets));
+
+  const allKeys = new Set();
+  allStats.forEach(s => Object.keys(s.segCounts).forEach(k => allKeys.add(k)));
+  const sortedKeys = [...allKeys].sort((a, b) => {
+    const ta = allStats.reduce((s, st) => s + (st.segCounts[a] || 0), 0);
+    const tb = allStats.reduce((s, st) => s + (st.segCounts[b] || 0), 0);
+    if (tb !== ta) return tb - ta;
+    return segmentValue(b) - segmentValue(a);
+  });
+
+  const topPerPlayer = allStats.map(s => {
+    const entries = Object.entries(s.segCounts);
+    if (entries.length === 0) return null;
+    entries.sort((a, b) => b[1] - a[1] || segmentValue(b[0]) - segmentValue(a[0]));
+    return entries.slice(0, 5);
+  });
+
+  const headerCols = indices.map(i => `<th>${escapeHtml(state.players[i].name)}</th>`).join("");
+  const rows = sortedKeys.map(k => {
+    const total = allStats.reduce((s, st) => s + (st.segCounts[k] || 0), 0);
+    const max = Math.max(...allStats.map(s => s.segCounts[k] || 0));
+    const cells = allStats.map(s => {
+      const c = s.segCounts[k] || 0;
+      const isMax = c === max && c > 0;
+      return `<td class="${isMax ? "big" : ""}">${c || ""}</td>`;
+    }).join("");
+    return `<tr>
+      <td class="player-name">${segmentLabel(k)}</td>
+      ${cells}
+      <td class="big">${total}</td>
+    </tr>`;
+  }).join("");
+
+  const topList = indices.map((i, slot) => {
+    const p = state.players[i];
+    const top = topPerPlayer[slot];
+    if (!top || top.length === 0) {
+      return `<div class="top-block"><div class="top-name">${escapeHtml(p.name)}</div><div class="top-empty">– keine Würfe –</div></div>`;
+    }
+    const items = top.map(([k, v]) => `<span class="chip">${segmentLabel(k)} <b>${v}×</b></span>`).join("");
+    return `<div class="top-block">
+      <div class="top-name">${escapeHtml(p.name)}</div>
+      <div class="top-chips">${items}</div>
+    </div>`;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="top-hits">${topList}</div>
+    <div class="stats-scroll">
+      <table class="stats-table hits-table">
+        <thead>
+          <tr>
+            <th>Feld</th>
+            ${headerCols}
+            <th>Σ</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// === Rendering ===
+function renderScoreboard() {
+  const sb = document.getElementById("scoreboard");
+  sb.innerHTML = "";
+  const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
+  const showLegs = state.legsToWin > 1;
+  const indices = state.activePlayerIndices.length > 0 ? state.activePlayerIndices : state.players.map((_, i) => i);
+  indices.forEach(i => {
+    const pl = state.players[i];
+    const div = document.createElement("div");
+    div.className = "player";
+    if (!showLegs) div.style.gridTemplateColumns = "1fr auto";
+    if (i === state.currentPlayer && state.matchWinner === -1 && state.legWinner === -1) div.classList.add("active");
+    if (i === state.matchWinner || (i === state.legWinner && state.matchWinner === -1)) div.classList.add("winner");
+    const turns = state.history.filter(h => h.playerIdx === i);
+    const remainingDisplay = (i === state.currentPlayer && state.matchWinner === -1 && state.legWinner === -1)
+      ? state.scores[i] - visitSum
+      : state.scores[i];
+    let crown = "";
+    if (i === state.matchWinner) crown = " 🏆";
+    else if (i === state.legWinner) crown = " 🎯";
+
+    const legsHtml = showLegs
+      ? `<div class="legs"><div class="legs-num">${state.legsWon[i]}</div><div class="legs-lbl">Legs</div></div>`
+      : "";
+
+    div.innerHTML = `
+      <div>
+        <div class="name">${escapeHtml(pl.name)}${crown}</div>
+        <div class="meta">Aufnahmen: ${turns.length}</div>
+      </div>
+      ${legsHtml}
+      <div class="remaining">${remainingDisplay}</div>
+    `;
+    if (i === state.currentPlayer && state.matchWinner === -1 && state.legWinner === -1) {
+      const visit = document.createElement("div");
+      visit.className = "visit";
+      for (let d = 0; d < 3; d++) {
+        const cell = document.createElement("div");
+        cell.className = "dart" + (state.currentVisit[d] ? " filled" : "");
+        cell.textContent = state.currentVisit[d] ? state.currentVisit[d].label : `Dart ${d+1}`;
+        visit.appendChild(cell);
+      }
+      const sum = document.createElement("div");
+      sum.className = "visit-sum";
+      sum.textContent = visitSum;
+      visit.appendChild(sum);
+      div.appendChild(visit);
+    }
+    sb.appendChild(div);
+  });
+
+  // Header
+  const hdr = document.getElementById("legHeader");
+  let header;
+  if (state.tournament.active) {
+    const total = state.tournament.schedule.length;
+    const idx = state.tournament.currentIdx;
+    const m = state.tournament.schedule[idx];
+    const matchLabel = m
+      ? `Match ${idx + 1}/${total}: ${state.players[m.p1].name} vs ${state.players[m.p2].name}`
+      : `Turnier`;
+    header = state.legsToWin > 1
+      ? `${matchLabel} · Leg ${state.legs.length + (state.legWinner === -1 ? 1 : 0)} · First to ${state.legsToWin}`
+      : matchLabel;
+  } else if (state.legsToWin > 1) {
+    header = `Leg ${state.legs.length + (state.legWinner === -1 ? 1 : 0)} · First to ${state.legsToWin}`;
+  } else {
+    header = "Spielstand";
+  }
+  hdr.textContent = header;
+}
+
+function renderTournament() {
+  const panel = document.getElementById("tournamentPanel");
+  if (!state.tournament.active) {
+    panel.style.display = "none";
+    return;
+  }
+  panel.style.display = "block";
+  const standings = computeStandings();
+  const schedule = state.tournament.schedule;
+  const curIdx = state.tournament.currentIdx;
+
+  const standingsRows = standings.map((s, r) => {
+    const isLead = r === 0 && s.played > 0;
+    const diff = s.legsFor - s.legsAgainst;
+    const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
+    return `<tr class="${isLead ? "lead" : ""}">
+      <td class="rank">${r + 1}</td>
+      <td class="player-name">${escapeHtml(state.players[s.idx].name)}</td>
+      <td class="big">${s.wins}</td>
+      <td>${s.losses}</td>
+      <td>${s.legsFor}:${s.legsAgainst}</td>
+      <td class="big">${diffStr}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("tournamentStandings").innerHTML = `
+    <div class="stats-scroll">
+      <table class="stats-table standings-table">
+        <thead><tr>
+          <th>#</th><th>Spieler</th>
+          <th title="Match-Siege">W</th>
+          <th title="Match-Niederlagen">L</th>
+          <th title="Legs gewonnen : verloren">Legs</th>
+          <th title="Leg-Differenz">±</th>
+        </tr></thead>
+        <tbody>${standingsRows}</tbody>
+      </table>
+    </div>
+  `;
+
+  const scheduleRows = schedule.map((m, i) => {
+    let cls = "schedule-row";
+    let marker = "○";
+    let result = "";
+    if (m.played) {
+      cls += " played";
+      marker = "✓";
+      result = `<span class="result">${m.legsP1}:${m.legsP2}</span>`;
+    } else if (i === curIdx && !state.tournament.finished) {
+      cls += " current";
+      marker = "●";
+    }
+    return `<div class="${cls}">
+      <div class="marker">${marker}</div>
+      <div class="pairing">${escapeHtml(state.players[m.p1].name)}<span class="vs">vs</span>${escapeHtml(state.players[m.p2].name)}</div>
+      ${result || `<div class="result" style="visibility:hidden">0:0</div>`}
+    </div>`;
+  }).join("");
+
+  document.getElementById("tournamentSchedule").innerHTML = `
+    <div class="schedule-list">${scheduleRows}</div>
+  `;
+}
+
+function renderPlayersEdit() {
+  const wrap = document.getElementById("playersEdit");
+  wrap.innerHTML = "";
+  state.players.forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "player-edit-row";
+    row.innerHTML = `
+      <span class="pnum">${i+1}.</span>
+      <input type="text" list="knownPlayersList" value="${escapeHtml(p.name)}" placeholder="Spielername">
+      <button class="ghost" data-remove="${i}" ${state.players.length <= 1 ? "disabled" : ""}>✕</button>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll("button[data-remove]").forEach(b => {
+    b.addEventListener("click", () => {
+      const idx = parseInt(b.dataset.remove, 10);
+      syncPlayersFromInputs();
+      state.players.splice(idx, 1);
+      renderPlayersEdit();
+    });
+  });
+  wrap.querySelectorAll("input").forEach((inp, i) => {
+    inp.addEventListener("input", () => {
+      state.players[i].name = inp.value;
+      renderPlayerPool();
+    });
+  });
+  renderPlayerPool();
+  updateKnownPlayersDatalist();
+}
+
+function syncPlayersFromInputs() {
+  const inputs = [...document.querySelectorAll("#playersEdit input")];
+  if (inputs.length === 0) return;
+  state.players = inputs.map((inp, i) => ({ name: inp.value.trim() || `Spieler ${i+1}` }));
+}
+
+function getKnownPlayerNames() {
+  const set = new Set();
+  loadHistory().forEach(m => (m.players || []).forEach(p => p && set.add(p)));
+  state.players.forEach(p => p.name && set.add(p.name));
+  const saved = loadSetup();
+  if (saved && Array.isArray(saved.players)) saved.players.forEach(n => n && set.add(n));
+  return [...set].sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+}
+
+function renderPlayerPool() {
+  const wrap = document.getElementById("playerPool");
+  if (!wrap) return;
+  const known = getKnownPlayerNames();
+  // Drop auto-generated "Spieler N" placeholders from the pool
+  const filtered = known.filter(n => !/^Spieler \d+$/.test(n));
+  if (filtered.length === 0) {
+    wrap.style.display = "none";
+    wrap.innerHTML = "";
+    return;
+  }
+  wrap.style.display = "";
+  const current = state.players.map(p => p.name);
+  wrap.innerHTML = `<span class="pool-label">Schnellauswahl</span>` +
+    filtered.map(name => {
+      const isActive = current.includes(name);
+      return `<button type="button" class="pool-chip ${isActive ? "active" : ""}" data-pool-name="${escapeHtml(name)}">${escapeHtml(name)}${isActive ? " ✓" : ""}</button>`;
+    }).join("");
+  wrap.querySelectorAll("button[data-pool-name]").forEach(b => {
+    b.addEventListener("click", () => togglePoolPlayer(b.dataset.poolName));
+  });
+}
+
+function togglePoolPlayer(name) {
+  syncPlayersFromInputs();
+  const idx = state.players.findIndex(p => p.name === name);
+  if (idx >= 0) {
+    if (state.players.length <= 1) return; // keep at least one
+    state.players.splice(idx, 1);
+  } else {
+    // Replace first auto-named placeholder, otherwise append
+    const placeholderIdx = state.players.findIndex(p => /^Spieler \d+$/.test(p.name));
+    if (placeholderIdx >= 0) {
+      state.players[placeholderIdx] = { name };
+    } else if (state.players.length < 12) {
+      state.players.push({ name });
+    }
+  }
+  renderPlayersEdit();
+}
+
+function updateKnownPlayersDatalist() {
+  const dl = document.getElementById("knownPlayersList");
+  if (!dl) return;
+  const known = getKnownPlayerNames().filter(n => !/^Spieler \d+$/.test(n));
+  dl.innerHTML = known.map(n => `<option value="${escapeHtml(n)}">`).join("");
+}
+
+function renderAll() {
+  renderScoreboard();
+  renderStats();
+  renderTournament();
+}
+
+function setStatus(html, type) {
+  const el = document.getElementById("status");
+  el.className = "status" + (type ? " " + type : "");
+  el.innerHTML = html;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[m]));
+}
+
+// === Persistent setup (last settings) ===
+const SETUP_KEY = "dart-counter:setup-v1";
+
+function snapshotSetup() {
+  return {
+    mode: state.mode,
+    outRule: state.outRule,
+    legsToWin: state.legsToWin,
+    tournament: state.tournament.active,
+    players: state.players.map(p => p.name)
+  };
+}
+
+function saveSetup() {
+  try { localStorage.setItem(SETUP_KEY, JSON.stringify(snapshotSetup())); }
+  catch (e) {}
+}
+
+function loadSetup() {
+  try {
+    const raw = localStorage.getItem(SETUP_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+
+function applySetupToUI(setup) {
+  if (!setup) return;
+  if (setup.mode) {
+    document.getElementById("mode").value = String(setup.mode);
+    document.querySelectorAll('#modeButtons button').forEach(b =>
+      b.classList.toggle("active", parseInt(b.dataset.mode, 10) === setup.mode)
+    );
+  }
+  if (setup.outRule) {
+    document.getElementById("outRule").value = setup.outRule;
+    document.querySelectorAll('#outButtons button').forEach(b =>
+      b.classList.toggle("active", b.dataset.out === setup.outRule)
+    );
+  }
+  if (setup.legsToWin) {
+    document.getElementById("legsToWin").value = String(setup.legsToWin);
+  }
+  if (typeof setup.tournament === "boolean") {
+    document.getElementById("tournamentMode").checked = setup.tournament;
+  }
+  if (Array.isArray(setup.players) && setup.players.length > 0) {
+    state.players = setup.players.map(name => ({ name: name || "Spieler" }));
+    renderPlayersEdit();
+  }
+}
+
+// === Persistent match history ===
+const HISTORY_KEY = "dart-counter:history-v1";
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function saveHistory(arr) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }
+  catch (e) { console.warn("History save failed:", e); }
+}
+
+function recordCompletedMatch() {
+  if (state.matchWinner === -1) return;
+  const indices = state.activePlayerIndices.slice();
+  const names = indices.map(i => state.players[i].name);
+  const legsWonByName = {};
+  indices.forEach(i => { legsWonByName[state.players[i].name] = state.legsWon[i]; });
+
+  const entry = {
+    timestamp: Date.now(),
+    mode: state.mode,
+    outRule: state.outRule,
+    legsToWin: state.legsToWin,
+    tournament: state.tournament.active,
+    players: names,
+    legsWon: legsWonByName,
+    winnerName: state.players[state.matchWinner].name,
+    legs: state.legs.map(l => ({
+      winnerName: state.players[l.winnerIdx].name,
+      startPlayerName: state.players[l.startPlayer].name,
+      turns: l.turns.map(t => ({
+        playerName: state.players[t.playerIdx].name,
+        before: t.before,
+        after: t.after,
+        bust: t.bust,
+        darts: t.darts.map(d => ({ value: d.value, mult: d.mult, num: d.num, label: d.label }))
+      }))
+    }))
+  };
+  const all = loadHistory();
+  all.push(entry);
+  saveHistory(all);
+}
+
+// === Historical aggregation ===
+function aggregateHistorical(matches, playerName) {
+  let matchesPlayed = 0, matchesWon = 0;
+  let legsPlayed = 0, legsWon = 0;
+  let darts = 0, scored = 0;
+  let f9scored = 0, f9darts = 0;
+  let highestVisit = 0;
+  let bestLegAvg = 0;
+  let dart1Sum = 0, dart1Count = 0;
+  let dart2Sum = 0, dart2Count = 0;
+  let dart3Sum = 0, dart3Count = 0;
+  let c60 = 0, c100 = 0, c140 = 0, c180 = 0;
+  let highestCheckout = 0;
+  let minDartsLeg = Infinity;
+  let busts = 0;
+  const numHits = {};
+  let bullsHit = 0, bullseyesHit = 0, missesHit = 0;
+  let triplesHit = 0;
+  let hits20 = 0, hits19 = 0, hits60 = 0, hits57 = 0;
+  let checkoutsAttempted = 0;
+
+  matches.forEach(m => {
+    if (!m.players.includes(playerName)) return;
+    matchesPlayed++;
+    if (m.winnerName === playerName) matchesWon++;
+    m.legs.forEach(leg => {
+      const pTurns = leg.turns.filter(t => t.playerName === playerName);
+      if (pTurns.length === 0) return;
+      legsPlayed++;
+      const wonThisLeg = leg.winnerName === playerName;
+      if (wonThisLeg) legsWon++;
+
+      let dartsCounter = 0;
+      let legDarts = 0, legScored = 0;
+      pTurns.forEach(t => {
+        const visitDarts = t.darts.length;
+        const visitSum = t.darts.reduce((s,d) => s + d.value, 0);
+        const visitScore = t.bust ? 0 : (t.before - t.after);
+        darts += visitDarts;
+        scored += visitScore;
+        legDarts += visitDarts;
+        legScored += visitScore;
+        if (t.bust) busts++;
+
+        if (dartsCounter < 9) {
+          const remain = 9 - dartsCounter;
+          if (visitDarts <= remain) {
+            f9scored += visitSum;
+            f9darts += visitDarts;
+          }
+        }
+        dartsCounter += visitDarts;
+
+        if (!t.bust) {
+          if (visitSum > highestVisit) highestVisit = visitSum;
+          if (visitSum >= 180) c180++;
+          if (visitSum >= 140) c140++;
+          if (visitSum >= 100) c100++;
+          if (visitSum >= 60) c60++;
+        }
+        if (t.darts[0]) { dart1Sum += t.darts[0].value; dart1Count++; }
+        if (t.darts[1]) { dart2Sum += t.darts[1].value; dart2Count++; }
+        if (t.darts[2]) { dart3Sum += t.darts[2].value; dart3Count++; }
+
+        t.darts.forEach(d => {
+          if (d.value === 0) {
+            missesHit++;
+          } else if (d.num === 25) {
+            if (d.mult === 2) bullseyesHit++;
+            else bullsHit++;
+          } else {
+            numHits[d.num] = (numHits[d.num] || 0) + 1;
+            if (d.mult === 3) triplesHit++;
+          }
+          if (d.num === 20) hits20++;
+          if (d.num === 19) hits19++;
+          if (d.num === 20 && d.mult === 3) hits60++;
+          if (d.num === 19 && d.mult === 3) hits57++;
+        });
+      });
+
+      if (wonThisLeg && legDarts > 0) {
+        const legAvg = legScored / legDarts * 3;
+        if (legAvg > bestLegAvg) bestLegAvg = legAvg;
+        if (legDarts < minDartsLeg) minDartsLeg = legDarts;
+        const winningTurn = pTurns[pTurns.length - 1];
+        const co = winningTurn.before - winningTurn.after;
+        if (co > highestCheckout) highestCheckout = co;
+        checkoutsAttempted++;
+      }
+    });
+  });
+
+  const pct = (a, b) => b > 0 ? (a / b * 100) : 0;
+  const rateNum = {};
+  for (let i = 1; i <= 20; i++) rateNum[i] = pct(numHits[i] || 0, darts);
+
+  return {
+    matchesPlayed, matchesWon,
+    winRate: pct(matchesWon, matchesPlayed),
+    legsPlayed, legsWon,
+    legWinRate: pct(legsWon, legsPlayed),
+    darts, scored,
+    avg3: darts > 0 ? scored / darts * 3 : 0,
+    f9avg: f9darts > 0 ? f9scored / f9darts * 3 : 0,
+    highestVisit,
+    bestLegAvg,
+    dart1Avg: dart1Count > 0 ? dart1Sum / dart1Count : 0,
+    dart2Avg: dart2Count > 0 ? dart2Sum / dart2Count : 0,
+    dart3Avg: dart3Count > 0 ? dart3Sum / dart3Count : 0,
+    c60, c100, c140, c180,
+    rate20: pct(hits20, darts),
+    rate2019: pct(hits20 + hits19, darts),
+    rate60: pct(hits60, darts),
+    rate6057: pct(hits60 + hits57, darts),
+    rateTriple: pct(triplesHit, darts),
+    rateMiss: pct(missesHit, darts),
+    rateBull: pct(bullsHit + bullseyesHit, darts),
+    rateNum,
+    highestCheckout,
+    minDartsLeg: minDartsLeg === Infinity ? null : minDartsLeg,
+    busts,
+    checkoutRate: pct(legsWon, checkoutsAttempted || legsPlayed)
+  };
+}
+
+// === History filter & render ===
+const historyFilter = {
+  period: "all",
+  customFrom: null,
+  customTo: null,
+  modeFilter: "all",
+  // null = alle Spieler, sonst Set of names to include
+  playersInclude: null
+};
+
+function filteredMatches() {
+  const all = loadHistory();
+  let from = -Infinity, to = Infinity;
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  if (historyFilter.period === "day") {
+    const t = new Date(); t.setHours(0,0,0,0); from = t.getTime();
+  } else if (historyFilter.period === "week") {
+    from = now - 7 * day;
+  } else if (historyFilter.period === "month") {
+    from = now - 30 * day;
+  } else if (historyFilter.period === "custom") {
+    if (historyFilter.customFrom) from = new Date(historyFilter.customFrom + "T00:00:00").getTime();
+    if (historyFilter.customTo) to = new Date(historyFilter.customTo + "T23:59:59").getTime();
+  }
+  return all.filter(m =>
+    m.timestamp >= from && m.timestamp <= to &&
+    (historyFilter.modeFilter === "all" || String(m.mode) === historyFilter.modeFilter)
+  );
+}
+
+function renderHistory() {
+  const matches = filteredMatches();
+  const meta = document.getElementById("historyMeta");
+  const container = document.getElementById("historyTable");
+
+  if (matches.length === 0) {
+    meta.innerHTML = "";
+    container.innerHTML = '<div class="history-empty">Keine Matches im gewählten Zeitraum. Spiele ein paar Matches – sie werden automatisch gespeichert.</div>';
+    return;
+  }
+
+  // Collect unique player names from filtered matches
+  const playerSet = new Set();
+  matches.forEach(m => m.players.forEach(p => playerSet.add(p)));
+  const allPlayers = [...playerSet].sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
+
+  // Render player filter chips
+  renderHistoryPlayerFilter(allPlayers);
+
+  // Apply player filter
+  const players = historyFilter.playersInclude === null
+    ? allPlayers
+    : allPlayers.filter(p => historyFilter.playersInclude.has(p));
+
+  if (players.length === 0) {
+    document.getElementById("historyMeta").innerHTML = `<strong>${matches.length}</strong> Match${matches.length === 1 ? "" : "es"} – aber keine Spieler ausgewählt.`;
+    document.getElementById("historyTable").innerHTML = '<div class="history-empty">Bitte mindestens einen Spieler im Filter aktivieren.</div>';
+    return;
+  }
+
+  // Aggregate per player
+  const stats = {};
+  players.forEach(p => { stats[p] = aggregateHistorical(matches, p); });
+
+  meta.innerHTML = `<strong>${matches.length}</strong> Match${matches.length === 1 ? "" : "es"} · <strong>${players.length}</strong> Spieler · Zeitraum: ${formatPeriod(matches)}`;
+
+  const sections = [
+    { title: "Sieg-Statistiken", rows: [
+      ["Spiele gespielt",  p => stats[p].matchesPlayed, "i"],
+      ["Spiele gewonnen",  p => stats[p].matchesWon, "i"],
+      ["Siegrate",         p => stats[p].winRate, "%"]
+    ]},
+    { title: "Set / Leg-Statistiken", rows: [
+      ["Legs gespielt",    p => stats[p].legsPlayed, "i"],
+      ["Legs gewonnen",    p => stats[p].legsWon, "i"],
+      ["Leg-Siegrate",     p => stats[p].legWinRate, "%"]
+    ]},
+    { title: "Wurf-Statistiken", rows: [
+      ["Darts geworfen",          p => stats[p].darts, "i"],
+      ["3-Darts Ø",               p => stats[p].avg3, "f2"],
+      ["First-9 Ø",               p => stats[p].f9avg, "f2"],
+      ["Höchste Aufnahme",        p => stats[p].highestVisit, "i"],
+      ["Bester Leg Ø",            p => stats[p].bestLegAvg, "f2"],
+      ["Insgesamt erzielte Punkte", p => stats[p].scored, "i"],
+      ["Dart 1 Ø",                p => stats[p].dart1Avg, "f2"],
+      ["Dart 2 Ø",                p => stats[p].dart2Avg, "f2"],
+      ["Dart 3 Ø",                p => stats[p].dart3Avg, "f2"]
+    ]},
+    { title: "Trefferraten", rows: [
+      ["20 Trefferrate",     p => stats[p].rate20, "%"],
+      ["20 / 19 Trefferrate",p => stats[p].rate2019, "%"],
+      ["T20 (60) Rate",      p => stats[p].rate60, "%"],
+      ["T20 / T19 Rate",     p => stats[p].rate6057, "%"],
+      ["Triple Rate",        p => stats[p].rateTriple, "%"]
+    ]},
+    { title: "Hohe Aufnahmen", rows: [
+      ["60+ Anzahl",   p => stats[p].c60, "i"],
+      ["100+ Anzahl",  p => stats[p].c100, "i"],
+      ["140+ Anzahl",  p => stats[p].c140, "i"],
+      ["180 Anzahl",   p => stats[p].c180, "i"]
+    ]},
+    { title: "Felder-Statistiken (Anteil aller Darts)", rows: [
+      ["Verfehlt Rate", p => stats[p].rateMiss, "%"],
+      ...Array.from({length:20}, (_, i) => [`${i+1} Rate`, p => stats[p].rateNum[i+1], "%"]),
+      ["Bull-Rate (25 + Bullseye)", p => stats[p].rateBull, "%"]
+    ]},
+    { title: "Checkout-Statistiken", rows: [
+      ["Höchster Checkout", p => stats[p].highestCheckout, "i"],
+      ["Min. Darts (Leg)",  p => stats[p].minDartsLeg ?? "–", "raw"],
+      ["Busts",             p => stats[p].busts, "i"]
+    ]}
+  ];
+
+  function fmt(v, type) {
+    if (type === "raw") return v;
+    if (type === "i") return v;
+    if (type === "f2") return v.toFixed(2).replace(".", ",");
+    if (type === "%") return v.toFixed(2).replace(".", ",") + " %";
+    return v;
+  }
+
+  const headerCols = players.map(p => `<th>${escapeHtml(p)}</th>`).join("");
+  let body = "";
+  sections.forEach(sec => {
+    body += `<tr class="section-row"><td colspan="${players.length + 1}">${sec.title}</td></tr>`;
+    sec.rows.forEach(([label, getter, type]) => {
+      const cells = players.map(p => {
+        const v = getter(p);
+        const s = fmt(v, type);
+        const isZero = (v === 0 || v === "–" || v === null);
+        return `<td class="${isZero ? "zero" : "value"}">${s}</td>`;
+      }).join("");
+      body += `<tr><td>${label}</td>${cells}</tr>`;
+    });
+  });
+
+  container.innerHTML = `
+    <div class="stats-scroll">
+      <table class="history-table">
+        <thead><tr><th></th>${headerCols}</tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderHistoryPlayerFilter(allPlayers) {
+  const row = document.getElementById("historyPlayerFilterRow");
+  const wrap = document.getElementById("historyPlayerFilter");
+  if (!row || !wrap) return;
+  if (allPlayers.length === 0) {
+    row.style.display = "none";
+    return;
+  }
+  row.style.display = "";
+  wrap.innerHTML = `
+    <span class="pool-label">Anzeigen</span>
+    ${allPlayers.map(name => {
+      const on = historyFilter.playersInclude === null || historyFilter.playersInclude.has(name);
+      return `<button type="button" class="pool-chip ${on ? "filter-on" : "filter-off"}" data-history-player="${escapeHtml(name)}">${escapeHtml(name)}${on ? " ✓" : ""}</button>`;
+    }).join("")}
+    <button type="button" class="pool-chip" id="historyPlayerAll" style="margin-left: auto;">Alle</button>
+  `;
+  wrap.querySelectorAll("button[data-history-player]").forEach(b => {
+    b.addEventListener("click", () => {
+      const name = b.dataset.historyPlayer;
+      if (historyFilter.playersInclude === null) {
+        // Currently "all"; clicking one means: only this one
+        historyFilter.playersInclude = new Set([name]);
+      } else {
+        const s = historyFilter.playersInclude;
+        if (s.has(name)) s.delete(name); else s.add(name);
+        if (s.size === allPlayers.length) historyFilter.playersInclude = null;
+      }
+      renderHistory();
+    });
+  });
+  const allBtn = document.getElementById("historyPlayerAll");
+  if (allBtn) allBtn.addEventListener("click", () => {
+    historyFilter.playersInclude = null;
+    renderHistory();
+  });
+}
+
+function formatPeriod(matches) {
+  if (matches.length === 0) return "–";
+  const ts = matches.map(m => m.timestamp);
+  const min = new Date(Math.min(...ts)), max = new Date(Math.max(...ts));
+  const f = d => d.toLocaleDateString("de-DE");
+  return min.toDateString() === max.toDateString() ? f(min) : `${f(min)} – ${f(max)}`;
+}
+
+const CHECKOUTS = {
+  170: "T20 T20 Bull", 167: "T20 T19 Bull", 164: "T20 T18 Bull", 161: "T20 T17 Bull",
+  160: "T20 T20 D20", 158: "T20 T20 D19", 157: "T20 T19 D20", 156: "T20 T20 D18",
+  155: "T20 T19 D19", 154: "T20 T18 D20", 153: "T20 T19 D18", 152: "T20 T20 D16",
+  151: "T20 T17 D20", 150: "T20 T18 D18", 149: "T20 T19 D16", 148: "T20 T16 D20",
+  147: "T20 T17 D18", 146: "T20 T18 D16", 145: "T20 T15 D20", 144: "T20 T20 D12",
+  143: "T20 T17 D16", 142: "T20 T14 D20", 141: "T20 T19 D12", 140: "T20 T20 D10",
+  139: "T19 T14 D20", 138: "T20 T18 D12", 137: "T20 T19 D10", 136: "T20 T20 D8",
+  135: "T20 T17 D12", 134: "T20 T14 D16", 133: "T20 T19 D8", 132: "T20 T16 D12",
+  131: "T20 T13 D16", 130: "T20 T18 D8", 129: "T19 T16 D12", 128: "T18 T14 D16",
+  127: "T20 T17 D8", 126: "T19 T19 D6", 125: "T20 T15 D10", 124: "T20 T16 D8",
+  123: "T19 T16 D9", 122: "T18 T18 D7", 121: "T20 T11 D14", 120: "T20 S20 D20",
+  119: "T19 T12 D13", 118: "T20 S18 D20", 117: "T20 S17 D20", 116: "T20 S16 D20",
+  115: "T20 S15 D20", 114: "T20 S14 D20", 113: "T20 S13 D20", 112: "T20 S12 D20",
+  111: "T20 S11 D20", 110: "T20 S10 D20", 109: "T20 S9 D20", 108: "T20 S16 D16",
+  107: "T19 S10 D20", 106: "T20 S6 D20", 105: "T20 S5 D20", 104: "T18 S18 D16",
+  103: "T19 S10 D18", 102: "T20 S10 D16", 101: "T17 S10 D20", 100: "T20 D20",
+  99: "T19 S10 D16", 98: "T20 D19", 97: "T19 D20", 96: "T20 D18", 95: "T19 D19",
+  94: "T18 D20", 93: "T19 D18", 92: "T20 D16", 91: "T17 D20", 90: "T18 D18",
+  89: "T19 D16", 88: "T20 D14", 87: "T17 D18", 86: "T18 D16", 85: "T15 D20",
+  84: "T20 D12", 83: "T17 D16", 82: "T14 D20", 81: "T19 D12", 80: "T20 D10",
+  79: "T13 D20", 78: "T18 D12", 77: "T19 D10", 76: "T20 D8", 75: "T17 D12",
+  74: "T14 D16", 73: "T19 D8", 72: "T16 D12", 71: "T13 D16", 70: "T18 D8",
+  69: "T19 D6", 68: "T20 D4", 67: "T17 D8", 66: "T10 D18", 65: "T19 D4",
+  64: "T16 D8", 63: "T13 D12", 62: "T10 D16", 61: "T15 D8", 60: "S20 D20",
+  58: "S18 D20", 57: "S17 D20", 56: "S16 D20", 55: "S15 D20", 54: "S14 D20",
+  53: "S13 D20", 52: "S12 D20", 51: "S11 D20", 50: "Bull", 49: "S17 D16",
+  48: "S16 D16", 47: "S15 D16", 46: "S14 D16", 45: "S13 D16", 44: "S12 D16",
+  43: "S11 D16", 42: "S10 D16", 41: "S9 D16", 40: "D20", 38: "D19", 36: "D18",
+  34: "D17", 32: "D16", 30: "D15", 28: "D14", 26: "D13", 24: "D12", 22: "D11",
+  20: "D10", 18: "D9", 16: "D8", 14: "D7", 12: "D6", 10: "D5", 8: "D4", 6: "D3", 4: "D2", 2: "D1"
+};
+function checkoutHint(remaining, dartsLeft, outRule) {
+  if (outRule !== "double") return null;
+  const co = CHECKOUTS[remaining];
+  if (!co) return null;
+  const dartsNeeded = co.split(" ").length;
+  if (dartsNeeded > dartsLeft) return null;
+  return co;
+}
+
+// === Views ===
+function setView(name) {
+  document.querySelectorAll(".view").forEach(v => {
+    v.hidden = v.dataset.view !== name;
+  });
+  document.querySelectorAll("#viewNav button").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === name);
+  });
+  if (name === "history") renderHistory();
+  if (name === "setup") {
+    renderPlayerPool();
+    updateKnownPlayersDatalist();
+  }
+}
+
+document.querySelectorAll("#viewNav button").forEach(b => {
+  b.addEventListener("click", () => setView(b.dataset.view));
+});
+
+// === Button groups (mode / out-rule) ===
+function bindButtonGroup(containerId, hiddenSelectId, dataAttr) {
+  const container = document.getElementById(containerId);
+  const hidden = document.getElementById(hiddenSelectId);
+  container.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      hidden.value = btn.dataset[dataAttr];
+      hidden.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  });
+}
+bindButtonGroup("modeButtons", "mode", "mode");
+bindButtonGroup("outButtons", "outRule", "out");
+
+// === Wiring ===
+window.startNewMatch = startNewMatch;
+window.startNextLeg = startNextLeg;
+window.startNextTournamentMatch = startNextTournamentMatch;
+window.setView = setView;
+window.repeatLast = function () {
+  // Restore last saved setup into UI, then start match and jump to game view.
+  applySetupToUI(loadSetup());
+  startNewMatch();
+  setView("game");
+};
+
+document.getElementById("addPlayer").addEventListener("click", () => {
+  const inputs = [...document.querySelectorAll("#playersEdit input")];
+  state.players = inputs.map((inp, i) => ({ name: inp.value.trim() || `Spieler ${i+1}` }));
+  if (state.players.length >= 8) return;
+  state.players.push({ name: `Spieler ${state.players.length + 1}` });
+  renderPlayersEdit();
+});
+document.getElementById("newGame").addEventListener("click", () => {
+  startNewMatch();
+  setView("game");
+});
+document.getElementById("repeatLastBtn").addEventListener("click", () => {
+  if (!loadSetup()) {
+    alert("Noch kein gespeichertes Setup vorhanden. Starte zuerst ein Match.");
+    return;
+  }
+  repeatLast();
+});
+document.getElementById("resetGame").addEventListener("click", startNewMatch);
+
+function maybeRestartFromSetting() {
+  const inProgress = state.history.length > 0 || state.legs.length > 0;
+  const matchEnded = state.matchWinner !== -1;
+  if (inProgress && !matchEnded) {
+    if (!confirm("Aktuelles Match abbrechen und neu starten?")) return;
+  }
+  startNewMatch();
+}
+["mode", "outRule", "legsToWin", "tournamentMode"].forEach(id => {
+  document.getElementById(id).addEventListener("change", maybeRestartFromSetting);
+});
+document.getElementById("undoLast").addEventListener("click", undoLastDart);
+document.getElementById("undoTurn").addEventListener("click", undoTurn);
+document.getElementById("endTurn").addEventListener("click", () => {
+  if (state.matchWinner !== -1 || state.legWinner !== -1) return;
+  if (state.currentVisit.length === 0) {
+    setStatus("Mindestens einen Wurf eingeben oder 'Miss' klicken.", "warn");
+    return;
+  }
+  finalizeTurn(false);
+  setStatus("Aufnahme beendet.");
+});
+document.querySelector('button[data-throw="0,0"]').addEventListener("click", () => {
+  recordThrow(0, 1, "Miss");
+});
+document.querySelectorAll(".tabs button[data-tab]").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".tabs button[data-tab]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    state.statsTab = b.dataset.tab;
+    renderStats();
+  });
+});
+
+// History filter wiring
+document.querySelectorAll("#periodButtons button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#periodButtons button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    historyFilter.period = b.dataset.period;
+    document.getElementById("customRange").hidden = (historyFilter.period !== "custom");
+    renderHistory();
+  });
+});
+document.querySelectorAll("#modeFilter button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#modeFilter button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    historyFilter.modeFilter = b.dataset.mfilter;
+    renderHistory();
+  });
+});
+document.getElementById("periodFrom").addEventListener("change", e => {
+  historyFilter.customFrom = e.target.value;
+  renderHistory();
+});
+document.getElementById("periodTo").addEventListener("change", e => {
+  historyFilter.customTo = e.target.value;
+  renderHistory();
+});
+
+document.getElementById("historyClear").addEventListener("click", () => {
+  if (confirm("Gesamten Verlauf wirklich löschen?")) {
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+  }
+});
+document.getElementById("historyExport").addEventListener("click", () => {
+  const data = localStorage.getItem(HISTORY_KEY) || "[]";
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dart-history-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById("historyImport").addEventListener("click", () => {
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "application/json";
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const incoming = JSON.parse(ev.target.result);
+        if (!Array.isArray(incoming)) throw new Error("Format");
+        const existing = loadHistory();
+        const merged = existing.concat(incoming).sort((a,b) => a.timestamp - b.timestamp);
+        // Deduplicate by timestamp + winnerName
+        const seen = new Set();
+        const unique = merged.filter(m => {
+          const key = `${m.timestamp}-${m.winnerName}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        saveHistory(unique);
+        renderHistory();
+        alert(`Import ok – ${incoming.length} Einträge eingelesen, jetzt insgesamt ${unique.length}.`);
+      } catch (e) {
+        alert("Import fehlgeschlagen: " + e.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+});
+
+// init
+buildBoard();
+applySetupToUI(loadSetup());
+renderPlayersEdit();
+startNewMatch();
+setView("setup");  // initial view: setup screen
+</script>
+</body>
+</html>
