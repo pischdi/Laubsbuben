@@ -8,8 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Dart Zähler">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%231a1d23'/><circle cx='90' cy='90' r='62' fill='%230d0e10'/><circle cx='90' cy='90' r='52' fill='%23eddcb1'/><circle cx='90' cy='90' r='40' fill='%230d0e10'/><circle cx='90' cy='90' r='30' fill='%23eddcb1'/><circle cx='90' cy='90' r='14' fill='%231f8a3e'/><circle cx='90' cy='90' r='6' fill='%23ce2029'/></svg>">
-<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%231a1d23'/><circle cx='16' cy='16' r='10' fill='%23eddcb1'/><circle cx='16' cy='16' r='3' fill='%23ce2029'/></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <title>Steel Dart Zähler</title>
 <style>
   :root {
@@ -170,7 +171,7 @@
     display: flex; flex-direction: column; align-items: center;
     gap: 10px;
   }
-  svg.board { width: 100%; max-width: 560px; height: auto; display: block; touch-action: manipulation; }
+  svg.board { width: 100%; max-width: 900px; height: auto; display: block; touch-action: manipulation; }
   svg.board path, svg.board circle {
     cursor: pointer;
     transition: filter .1s, opacity .1s;
@@ -239,22 +240,60 @@
   }
   .dart {
     background: #1a1d23;
-    border: 1px dashed var(--border);
+    border: 2px dashed var(--border);
     border-radius: 6px;
-    padding: 6px 4px;
-    font-size: 13px;
+    padding: 10px 8px;
+    font-size: 18px;
+    font-weight: 700;
     text-align: center;
     color: var(--muted);
-    min-height: 30px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-variant-numeric: tabular-nums;
   }
-  .dart.filled { color: var(--text); border-style: solid; border-color: var(--accent-2); }
+  .dart.filled { color: var(--accent); border-style: solid; border-color: var(--accent); background: rgba(230, 57, 70, 0.15); }
+  .prev-visit {
+    opacity: 0.5;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+  }
+  .prev-dart {
+    font-size: 14px;
+    padding: 8px 6px;
+    min-height: 35px;
+    background: transparent;
+    border-color: var(--border);
+  }
+  .prev-dart.empty { color: var(--muted); }
+  .prev-sum {
+    font-size: 12px;
+    background: transparent;
+    border-color: var(--border);
+  }
   .visit-sum {
     font-weight: 700; font-size: 14px;
     background: var(--panel);
     border: 1px solid var(--border);
     padding: 6px 10px; border-radius: 6px;
     min-width: 56px; text-align: center;
+  }
+
+  .history-list {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px;
+    padding: 8px; background: var(--panel); border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .history-item {
+    padding: 4px 8px; background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 4px; cursor: pointer; color: var(--muted);
+    transition: all .15s;
+  }
+  .history-item:hover {
+    background: var(--accent); color: white; border-color: var(--accent);
   }
 
   .controls {
@@ -560,6 +599,48 @@
       </div>
 
       <div class="setup-section">
+        <div class="section-label">Dartscheibe</div>
+        <div style="margin-bottom: 12px;">
+          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; font-size: 13px;">
+            <select id="boardMode" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text);">
+              <option value="full">Standard (mit Bull)</option>
+              <option value="simple">Einfach (nur S/D/T)</option>
+            </select>
+          </label>
+          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px;">
+            Triple Inner: <input type="range" id="tripleInner" min="100" max="140" value="120" style="flex: 1;">
+            <span id="tripleInnerVal">120</span>
+          </label>
+          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px;">
+            Triple Outer: <input type="range" id="tripleOuter" min="140" max="180" value="155" style="flex: 1;">
+            <span id="tripleOuterVal">155</span>
+          </label>
+          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px;">
+            Double Inner: <input type="range" id="doubleInner" min="160" max="220" value="185" style="flex: 1;">
+            <span id="doubleInnerVal">185</span>
+          </label>
+          <label style="display: flex; gap: 8px; align-items: center; font-size: 13px;">
+            Double Outer: <input type="range" id="doubleOuter" min="220" max="260" value="240" style="flex: 1;">
+            <span id="doubleOuterVal">240</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="setup-section">
+        <div class="section-label">Ansage</div>
+        <div class="setup-row" style="gap: 12px; margin-bottom: 10px;">
+          <select id="ttsLanguage" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text);">
+            <option value="de-DE">🇩🇪 Deutsch</option>
+            <option value="en-US">🇬🇧 English</option>
+          </select>
+          <select id="ttsVoice" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text);">
+            <option value="">Standard</option>
+          </select>
+        </div>
+        <button id="testTTS" style="width: 100%; padding: 8px;">🔊 Test (T20)</button>
+      </div>
+
+      <div class="setup-section">
         <div class="section-label">Turnier</div>
         <label style="font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; cursor: pointer;">
           <input type="checkbox" id="tournamentMode" style="width: 16px; height: 16px; cursor: pointer;">
@@ -595,6 +676,7 @@
           <button id="undoTurn">Aufnahme rückgängig</button>
           <button id="resetGame">Match neustarten</button>
         </div>
+        <div class="history-list" id="historyList"></div>
       </div>
       <div class="panel">
         <h2>Dartscheibe</h2>
@@ -698,8 +780,8 @@
 const NUMBERS = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
 const R = {
   innerBull: 12, outerBull: 30,
-  tripleInner: 130, tripleOuter: 142,
-  doubleInner: 200, doubleOuter: 215
+  tripleInner: 120, tripleOuter: 155,
+  doubleInner: 185, doubleOuter: 240
 };
 const COLOR = {
   bgRing: "#0d0e10",
@@ -724,6 +806,15 @@ function donutWedge(r1, r2, startDeg, endDeg) {
 }
 
 function buildBoard() {
+  const mode = document.getElementById("boardMode") ? document.getElementById("boardMode").value : "full";
+  if (mode === "simple") {
+    buildBoardSimple();
+  } else {
+    buildBoardFull();
+  }
+}
+
+function buildBoardFull() {
   const svg = document.getElementById("board");
   const ns = "http://www.w3.org/2000/svg";
   svg.innerHTML = "";
@@ -781,6 +872,66 @@ function buildBoard() {
   svg.appendChild(ib);
 }
 
+function buildBoardSimple() {
+  const svg = document.getElementById("board");
+  const ns = "http://www.w3.org/2000/svg";
+  svg.innerHTML = "";
+
+  const back = document.createElementNS(ns, "circle");
+  back.setAttribute("cx", 0); back.setAttribute("cy", 0);
+  back.setAttribute("r", 250);
+  back.setAttribute("fill", COLOR.bgRing);
+  svg.appendChild(back);
+
+  const singleInner = 80, doubleInner = 130, doubleOuter = 170;
+
+  for (let i = 0; i < 20; i++) {
+    const num = NUMBERS[i];
+    const center = -90 + i * 18;
+    const start = center - 9, end = center + 9;
+    const isLight = (i % 2 === 1);
+    const singleColor = isLight ? COLOR.singleLight : COLOR.singleDark;
+    const dtIsRed = !isLight;
+    const dtColor = dtIsRed ? COLOR.doubleRed : COLOR.doubleGreen;
+
+    addSeg(svg, ns, donutWedge(singleInner, doubleInner, start, end), singleColor, num, "S");
+    addSeg(svg, ns, donutWedge(doubleInner, doubleOuter, start, end), dtColor, num, "D");
+    addSeg(svg, ns, donutWedge(doubleOuter, doubleOuter + 50, start, end), dtColor, num, "T");
+
+    const lblR = doubleOuter + 35;
+    const lx = lblR * Math.cos(deg2rad(center));
+    const ly = lblR * Math.sin(deg2rad(center));
+    const t = document.createElementNS(ns, "text");
+    t.setAttribute("x", lx); t.setAttribute("y", ly);
+    t.setAttribute("fill", COLOR.numText);
+    t.setAttribute("font-size", "22");
+    t.setAttribute("text-anchor", "middle");
+    t.setAttribute("dominant-baseline", "central");
+    t.textContent = num;
+    svg.appendChild(t);
+  }
+
+  const ob = document.createElementNS(ns, "circle");
+  ob.setAttribute("cx", 0); ob.setAttribute("cy", 0);
+  ob.setAttribute("r", 25);
+  ob.setAttribute("fill", COLOR.bullOuter);
+  ob.setAttribute("stroke", COLOR.stroke);
+  ob.setAttribute("stroke-width", "0.6");
+  ob.classList.add("bull-target");
+  ob.addEventListener("click", () => recordThrow(25, 1, "Bull 25"));
+  svg.appendChild(ob);
+
+  const ib = document.createElementNS(ns, "circle");
+  ib.setAttribute("cx", 0); ib.setAttribute("cy", 0);
+  ib.setAttribute("r", 12);
+  ib.setAttribute("fill", COLOR.bullInner);
+  ib.setAttribute("stroke", COLOR.stroke);
+  ib.setAttribute("stroke-width", "0.6");
+  ib.classList.add("bull-target");
+  ib.addEventListener("click", () => recordThrow(25, 2, "Bullseye"));
+  svg.appendChild(ib);
+}
+
 function addSeg(svg, ns, d, fill, num, kind) {
   const p = document.createElementNS(ns, "path");
   p.setAttribute("d", d);
@@ -796,6 +947,11 @@ function addSeg(svg, ns, d, fill, num, kind) {
 
 // === Game state ===
 const state = {
+  tts: {
+    enabled: true,
+    language: "de-DE",
+    voiceIdx: 0
+  },
   mode: 501,
   outRule: "double",
   players: [
@@ -976,6 +1132,41 @@ function isFinishingDartValid(mult) {
   return true;
 }
 
+function getAvailableVoices(lang) {
+  const synth = window.speechSynthesis;
+  if (!synth) return [];
+  const allVoices = synth.getVoices();
+  return allVoices.filter(v => v.lang.startsWith(lang.split("-")[0]));
+}
+
+function populateVoiceOptions() {
+  const langSelect = document.getElementById("ttsLanguage");
+  const voiceSelect = document.getElementById("ttsVoice");
+  const lang = langSelect.value || "de-DE";
+  const voices = getAvailableVoices(lang);
+
+  voiceSelect.innerHTML = '<option value="">Standard</option>' +
+    voices.map((v, i) => `<option value="${i}">${v.name}</option>`).join("");
+
+  if (state.tts.voiceIdx > 0 && state.tts.voiceIdx < voices.length) {
+    voiceSelect.value = state.tts.voiceIdx;
+  }
+}
+
+function speakThrow(label) {
+  if (!window.speechSynthesis || !state.tts.enabled) return;
+  const lang = state.tts.language || "de-DE";
+  const voices = getAvailableVoices(lang);
+  const utterance = new SpeechSynthesisUtterance(label);
+  utterance.lang = lang;
+  utterance.rate = 1;
+  if (state.tts.voiceIdx > 0 && state.tts.voiceIdx < voices.length) {
+    utterance.voice = voices[state.tts.voiceIdx];
+  }
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
 function recordThrow(num, mult, label) {
   if (state.matchWinner !== -1 || state.legWinner !== -1) return;
   if (state.currentVisit.length >= 3) {
@@ -995,6 +1186,7 @@ function recordThrow(num, mult, label) {
                  || (state.outRule === "double" && after === 1)
                  || (isCheckoutAttempt && !isFinishingDartValid(mult));
 
+  speakThrow(label);
   renderScoreboard();
   renderStats();
 
@@ -1213,6 +1405,26 @@ function replayHistoryScores() {
   state.history.forEach(t => {
     if (!t.bust) state.scores[t.playerIdx] -= (t.before - t.after);
   });
+}
+
+function undoToTurn(turnIndex) {
+  if (turnIndex < 0 || turnIndex >= state.history.length) return;
+  while (state.history.length > turnIndex) {
+    state.history.pop();
+  }
+  state.scores = state.players.map(() => state.mode);
+  state.currentVisit = [];
+  replayHistoryScores();
+  if (state.history.length > 0) {
+    const last = state.history[state.history.length - 1];
+    state.currentPlayer = (state.history.findIndex(h => h.playerIdx !== last.playerIdx) >= 0)
+      ? state.players.findIndex((_, i) => i !== last.playerIdx && state.activePlayerIndices.includes(i))
+      : (state.activePlayerIndices.find(i => i !== last.playerIdx) ?? state.activePlayerIndices[0]);
+  }
+  state.legWinner = -1;
+  state.matchWinner = -1;
+  renderAll();
+  setStatus(`Zurück zu Aufnahme ${turnIndex + 1}.`);
 }
 
 function undoTurn() {
@@ -1502,6 +1714,22 @@ function renderHitsTab(container) {
 }
 
 // === Rendering ===
+function renderHistoryList() {
+  const histList = document.getElementById("historyList");
+  if (state.history.length === 0) {
+    histList.innerHTML = "";
+    return;
+  }
+  const items = state.history.map((h, i) => {
+    const sum = h.darts.reduce((s, d) => s + d.value, 0);
+    const pname = state.players[h.playerIdx].name.substring(0, 8);
+    return `<div class="history-item" onclick="undoToTurn(${i})" title="Zurück zu ${pname} Aufnahme ${i+1}">
+      ${pname} #${i+1}<br><small>${sum}</small>
+    </div>`;
+  }).slice(-6); // Show last 6 turns
+  histList.innerHTML = items.join("");
+}
+
 function renderScoreboard() {
   const sb = document.getElementById("scoreboard");
   sb.innerHTML = "";
@@ -1549,6 +1777,29 @@ function renderScoreboard() {
       sum.textContent = visitSum;
       visit.appendChild(sum);
       div.appendChild(visit);
+    } else if (state.matchWinner === -1 && state.legWinner === -1 && state.history.length > 0) {
+      const lastTurn = state.history[state.history.length - 1];
+      if (lastTurn && lastTurn.playerIdx !== i) {
+        const prevVisit = document.createElement("div");
+        prevVisit.className = "visit prev-visit";
+        for (let d = 0; d < lastTurn.darts.length && d < 3; d++) {
+          const cell = document.createElement("div");
+          cell.className = "dart prev-dart";
+          cell.textContent = lastTurn.darts[d].label;
+          prevVisit.appendChild(cell);
+        }
+        for (let d = lastTurn.darts.length; d < 3; d++) {
+          const cell = document.createElement("div");
+          cell.className = "dart prev-dart empty";
+          cell.textContent = "—";
+          prevVisit.appendChild(cell);
+        }
+        const sum = document.createElement("div");
+        sum.className = "visit-sum prev-sum";
+        sum.textContent = lastTurn.darts.reduce((s, d) => s + d.value, 0);
+        prevVisit.appendChild(sum);
+        div.appendChild(prevVisit);
+      }
     }
     sb.appendChild(div);
   });
@@ -1734,6 +1985,7 @@ function updateKnownPlayersDatalist() {
 
 function renderAll() {
   renderScoreboard();
+  renderHistoryList();
   renderStats();
   renderTournament();
 }
@@ -2291,6 +2543,51 @@ function maybeRestartFromSetting() {
 });
 document.getElementById("undoLast").addEventListener("click", undoLastDart);
 document.getElementById("undoTurn").addEventListener("click", undoTurn);
+
+// TTS settings
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = populateVoiceOptions;
+  populateVoiceOptions();
+}
+document.getElementById("ttsLanguage").addEventListener("change", (e) => {
+  state.tts.language = e.target.value;
+  populateVoiceOptions();
+  localStorage.setItem("ttsLanguage", state.tts.language);
+});
+document.getElementById("ttsVoice").addEventListener("change", (e) => {
+  state.tts.voiceIdx = parseInt(e.target.value) || 0;
+  localStorage.setItem("ttsVoiceIdx", state.tts.voiceIdx);
+});
+document.getElementById("testTTS").addEventListener("click", () => {
+  speakThrow("T 20");
+});
+
+// Load TTS settings from localStorage
+const savedLang = localStorage.getItem("ttsLanguage");
+const savedVoice = localStorage.getItem("ttsVoiceIdx");
+if (savedLang) {
+  state.tts.language = savedLang;
+  document.getElementById("ttsLanguage").value = savedLang;
+  populateVoiceOptions();
+}
+if (savedVoice) {
+  state.tts.voiceIdx = parseInt(savedVoice);
+  document.getElementById("ttsVoice").value = savedVoice;
+}
+
+// Dartscheibe Slider + Mode
+document.getElementById("boardMode").addEventListener("change", buildBoard);
+["tripleInner", "tripleOuter", "doubleInner", "doubleOuter"].forEach(id => {
+  const slider = document.getElementById(id);
+  const display = document.getElementById(id + "Val");
+  slider.addEventListener("input", (e) => {
+    const val = parseInt(e.target.value);
+    display.textContent = val;
+    R[id] = val;
+    buildBoard();
+  });
+});
+
 document.getElementById("endTurn").addEventListener("click", () => {
   if (state.matchWinner !== -1 || state.legWinner !== -1) return;
   if (state.currentVisit.length === 0) {
@@ -2393,6 +2690,15 @@ buildBoard();
 applySetupToUI(loadSetup());
 renderPlayersEdit();
 startNewMatch();
+
+// Service-Worker für Offline-Betrieb (greift nur über http(s)://, nicht bei file://)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(err => {
+      console.warn("Service Worker Registrierung fehlgeschlagen:", err);
+    });
+  });
+}
 setView("setup");  // initial view: setup screen
 </script>
 </body>
