@@ -1153,18 +1153,33 @@ function populateVoiceOptions() {
   }
 }
 
+const ttsQueue = [];
+
 function speakThrow(label) {
   if (!window.speechSynthesis || !state.tts.enabled) return;
   const lang = state.tts.language || "de-DE";
   const voices = getAvailableVoices(lang);
-  const utterance = new SpeechSynthesisUtterance(label);
-  utterance.lang = lang;
-  utterance.rate = 1;
-  if (state.tts.voiceIdx > 0 && state.tts.voiceIdx < voices.length) {
-    utterance.voice = voices[state.tts.voiceIdx];
+
+  ttsQueue.push(() => {
+    const utterance = new SpeechSynthesisUtterance(label);
+    utterance.lang = lang;
+    utterance.rate = 1;
+    if (state.tts.voiceIdx > 0 && state.tts.voiceIdx < voices.length) {
+      utterance.voice = voices[state.tts.voiceIdx];
+    }
+    utterance.onend = () => {
+      ttsQueue.shift();
+      if (ttsQueue.length > 0) {
+        ttsQueue[0]();
+      }
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  });
+
+  if (ttsQueue.length === 1) {
+    ttsQueue[0]();
   }
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
 }
 
 function recordThrow(num, mult, label) {
@@ -1204,8 +1219,8 @@ function recordThrow(num, mult, label) {
   }
   if (isLastDart) {
     setStatus(`${state.players[p].name}: ${visitSum} – Aufnahme beendet.`);
-    setTimeout(() => speakThrow(`insgesamt ${visitSum}`), 400);
-    setTimeout(() => speakThrow(`Rest ${after}`), 1200);
+    speakThrow(`insgesamt ${visitSum}`);
+    speakThrow(`Rest ${after}`);
     finalizeTurn(false);
   } else {
     const remaining = before - visitSum;
