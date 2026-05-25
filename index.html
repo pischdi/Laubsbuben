@@ -1205,6 +1205,7 @@ function recordThrow(num, mult, label) {
   if (isLastDart) {
     setStatus(`${state.players[p].name}: ${visitSum} – Aufnahme beendet.`);
     setTimeout(() => speakThrow(`insgesamt ${visitSum}`), 400);
+    setTimeout(() => speakThrow(`Rest ${after}`), 1200);
     finalizeTurn(false);
   } else {
     const remaining = before - visitSum;
