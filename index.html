@@ -1126,9 +1126,7 @@ function recordThrow(num, mult, label) {
   }
   if (isLastDart) {
     setStatus(`${state.players[p].name}: ${visitSum} – Aufnahme beendet.`);
-    const legSum = state.mode - after;
     speakThrow(`insgesamt ${visitSum}`);
-    speakThrow(`Leg gesamt ${legSum}`);
     speakThrow(`Rest ${after}`);
     finalizeTurn(false);
   } else {
