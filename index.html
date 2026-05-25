@@ -838,7 +838,7 @@ function buildBoardFull() {
     addSeg(svg, ns, donutWedge(R.outerBull, R.tripleInner, start, end), singleColor, num, "S");
     addSeg(svg, ns, donutWedge(R.tripleInner, R.tripleOuter, start, end), dtColor, num, "T");
 
-    const lblR = R.doubleOuter + 22;
+    const lblR = R.doubleOuter + 35;
     const lx = lblR * Math.cos(deg2rad(center));
     const ly = lblR * Math.sin(deg2rad(center));
     const t = document.createElementNS(ns, "text");
@@ -939,8 +939,8 @@ function addSeg(svg, ns, d, fill, num, kind) {
   p.setAttribute("stroke", COLOR.stroke);
   p.setAttribute("stroke-width", "0.6");
   let mult = 1; let label = `${num}`;
-  if (kind === "D") { mult = 2; label = `D${num}`; }
-  if (kind === "T") { mult = 3; label = `T${num}`; }
+  if (kind === "D") { mult = 2; label = `Double ${num}`; }
+  if (kind === "T") { mult = 3; label = `Triple ${num}`; }
   p.addEventListener("click", () => recordThrow(num, mult, label));
   svg.appendChild(p);
 }
@@ -1187,6 +1187,8 @@ function recordThrow(num, mult, label) {
                  || (isCheckoutAttempt && !isFinishingDartValid(mult));
 
   speakThrow(label);
+  const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
+  setTimeout(() => speakThrow(`insgesamt ${visitSum}`), 800);
   renderScoreboard();
   renderStats();
 
