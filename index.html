@@ -599,34 +599,6 @@
       </div>
 
       <div class="setup-section">
-        <div class="section-label">Dartscheibe</div>
-        <div style="margin-bottom: 12px;">
-          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; font-size: 13px;">
-            <select id="boardMode" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text);">
-              <option value="full">Standard (mit Bull)</option>
-              <option value="simple">Einfach (nur S/D/T)</option>
-            </select>
-          </label>
-          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px;">
-            Triple Inner: <input type="range" id="tripleInner" min="100" max="120" value="108" style="flex: 1;">
-            <span id="tripleInnerVal">108</span>
-          </label>
-          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px;">
-            Triple Outer: <input type="range" id="tripleOuter" min="135" max="160" value="148" style="flex: 1;">
-            <span id="tripleOuterVal">148</span>
-          </label>
-          <label style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px;">
-            Double Inner: <input type="range" id="doubleInner" min="170" max="210" value="190" style="flex: 1;">
-            <span id="doubleInnerVal">190</span>
-          </label>
-          <label style="display: flex; gap: 8px; align-items: center; font-size: 13px;">
-            Double Outer: <input type="range" id="doubleOuter" min="220" max="250" value="235" style="flex: 1;">
-            <span id="doubleOuterVal">235</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="setup-section">
         <div class="section-label">Ansage</div>
         <div class="setup-row" style="gap: 12px; margin-bottom: 10px;">
           <select id="ttsLanguage" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text);">
@@ -806,12 +778,7 @@ function donutWedge(r1, r2, startDeg, endDeg) {
 }
 
 function buildBoard() {
-  const mode = document.getElementById("boardMode") ? document.getElementById("boardMode").value : "full";
-  if (mode === "simple") {
-    buildBoardSimple();
-  } else {
-    buildBoardFull();
-  }
+  buildBoardFull();
 }
 
 function buildBoardFull() {
@@ -864,66 +831,6 @@ function buildBoardFull() {
   const ib = document.createElementNS(ns, "circle");
   ib.setAttribute("cx", 0); ib.setAttribute("cy", 0);
   ib.setAttribute("r", R.innerBull);
-  ib.setAttribute("fill", COLOR.bullInner);
-  ib.setAttribute("stroke", COLOR.stroke);
-  ib.setAttribute("stroke-width", "0.6");
-  ib.classList.add("bull-target");
-  ib.addEventListener("click", () => recordThrow(25, 2, "Bullseye"));
-  svg.appendChild(ib);
-}
-
-function buildBoardSimple() {
-  const svg = document.getElementById("board");
-  const ns = "http://www.w3.org/2000/svg";
-  svg.innerHTML = "";
-
-  const back = document.createElementNS(ns, "circle");
-  back.setAttribute("cx", 0); back.setAttribute("cy", 0);
-  back.setAttribute("r", 250);
-  back.setAttribute("fill", COLOR.bgRing);
-  svg.appendChild(back);
-
-  const singleInner = 80, doubleInner = 130, doubleOuter = 170;
-
-  for (let i = 0; i < 20; i++) {
-    const num = NUMBERS[i];
-    const center = -90 + i * 18;
-    const start = center - 9, end = center + 9;
-    const isLight = (i % 2 === 1);
-    const singleColor = isLight ? COLOR.singleLight : COLOR.singleDark;
-    const dtIsRed = !isLight;
-    const dtColor = dtIsRed ? COLOR.doubleRed : COLOR.doubleGreen;
-
-    addSeg(svg, ns, donutWedge(singleInner, doubleInner, start, end), singleColor, num, "S");
-    addSeg(svg, ns, donutWedge(doubleInner, doubleOuter, start, end), dtColor, num, "D");
-    addSeg(svg, ns, donutWedge(doubleOuter, doubleOuter + 50, start, end), dtColor, num, "T");
-
-    const lblR = doubleOuter + 35;
-    const lx = lblR * Math.cos(deg2rad(center));
-    const ly = lblR * Math.sin(deg2rad(center));
-    const t = document.createElementNS(ns, "text");
-    t.setAttribute("x", lx); t.setAttribute("y", ly);
-    t.setAttribute("fill", COLOR.numText);
-    t.setAttribute("font-size", "22");
-    t.setAttribute("text-anchor", "middle");
-    t.setAttribute("dominant-baseline", "central");
-    t.textContent = num;
-    svg.appendChild(t);
-  }
-
-  const ob = document.createElementNS(ns, "circle");
-  ob.setAttribute("cx", 0); ob.setAttribute("cy", 0);
-  ob.setAttribute("r", 25);
-  ob.setAttribute("fill", COLOR.bullOuter);
-  ob.setAttribute("stroke", COLOR.stroke);
-  ob.setAttribute("stroke-width", "0.6");
-  ob.classList.add("bull-target");
-  ob.addEventListener("click", () => recordThrow(25, 1, "Bull 25"));
-  svg.appendChild(ob);
-
-  const ib = document.createElementNS(ns, "circle");
-  ib.setAttribute("cx", 0); ib.setAttribute("cy", 0);
-  ib.setAttribute("r", 12);
   ib.setAttribute("fill", COLOR.bullInner);
   ib.setAttribute("stroke", COLOR.stroke);
   ib.setAttribute("stroke-width", "0.6");
@@ -2595,18 +2502,6 @@ if (savedVoice) {
 }
 
 // Dartscheibe Slider + Mode
-document.getElementById("boardMode").addEventListener("change", buildBoard);
-["tripleInner", "tripleOuter", "doubleInner", "doubleOuter"].forEach(id => {
-  const slider = document.getElementById(id);
-  const display = document.getElementById(id + "Val");
-  slider.addEventListener("input", (e) => {
-    const val = parseInt(e.target.value);
-    display.textContent = val;
-    R[id] = val;
-    buildBoard();
-  });
-});
-
 document.getElementById("endTurn").addEventListener("click", () => {
   if (state.matchWinner !== -1 || state.legWinner !== -1) return;
   if (state.currentVisit.length === 0) {
