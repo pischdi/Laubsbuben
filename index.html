@@ -1187,7 +1187,6 @@ function recordThrow(num, mult, label) {
                  || (isCheckoutAttempt && !isFinishingDartValid(mult));
 
   speakThrow(label);
-  const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
   setTimeout(() => speakThrow(`insgesamt ${visitSum}`), 800);
   renderScoreboard();
   renderStats();
