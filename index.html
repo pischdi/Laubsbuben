@@ -543,6 +543,72 @@
     font-size: 18px; font-weight: 800; color: var(--good); margin-bottom: 4px;
   }
   .match-banner .sub { font-size: 13px; color: var(--text); }
+
+  /* Fullscreen Board */
+  body.fullscreen-board {
+    overflow: hidden;
+  }
+  body.fullscreen-board .app {
+    max-width: 100%;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  body.fullscreen-board .topbar {
+    display: none;
+  }
+  body.fullscreen-board .view:not(.view-game) {
+    display: none !important;
+  }
+  body.fullscreen-board .view-game {
+    display: block !important;
+    flex: 1;
+    padding: 0;
+  }
+  body.fullscreen-board .game-grid {
+    height: 100vh;
+    grid-template-columns: 1fr;
+    gap: 0;
+    align-items: stretch;
+  }
+  body.fullscreen-board .game-grid > div:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  body.fullscreen-board .panel {
+    padding: 0;
+    border: none;
+    background: var(--bg);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  body.fullscreen-board .panel h2 {
+    display: none;
+  }
+  body.fullscreen-board .board-wrap {
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+  }
+  body.fullscreen-board svg.board {
+    max-width: 100%;
+    max-height: 100%;
+    width: 90vh;
+    height: 90vh;
+  }
+  body.fullscreen-board .extra-row,
+  body.fullscreen-board .legend {
+    display: none;
+  }
+  body.fullscreen-board .game-grid > div:last-child {
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -651,8 +717,12 @@
         <div class="history-list" id="historyList"></div>
       </div>
       <div class="panel">
-        <h2>Dartscheibe</h2>
-        <div class="board-wrap">
+        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Dartscheibe</span>
+          <button id="toggleFullscreen" style="padding: 6px 12px; font-size: 13px;">⛶ Vollbild</button>
+        </h2>
+        <div class="board-wrap" id="boardWrap">
+          <div id="missZone" style="position: absolute; width: 100%; height: 100%; cursor: pointer; display: none;"></div>
           <svg class="board" id="board" viewBox="-260 -260 520 520" aria-label="Dartscheibe"></svg>
           <div class="extra-row">
             <button data-throw="0,0">Miss (0)</button>
@@ -2595,6 +2665,47 @@ document.getElementById("historyImport").addEventListener("click", () => {
     reader.readAsText(file);
   };
   inp.click();
+});
+
+// Fullscreen board toggle
+document.getElementById("toggleFullscreen").addEventListener("click", () => {
+  document.body.classList.toggle("fullscreen-board");
+  const btn = document.getElementById("toggleFullscreen");
+  btn.textContent = document.body.classList.contains("fullscreen-board") ? "✕ Normal" : "⛶ Vollbild";
+  updateMissZone();
+});
+
+// Miss-Zone: Klicks außerhalb der Scheibe registrieren als Miss
+function updateMissZone() {
+  const missZone = document.getElementById("missZone");
+  const board = document.getElementById("board");
+  const boardWrap = document.getElementById("boardWrap");
+
+  if (document.body.classList.contains("fullscreen-board")) {
+    missZone.style.display = "block";
+    missZone.style.position = "fixed";
+    missZone.style.top = "0";
+    missZone.style.left = "0";
+    missZone.style.width = "100vw";
+    missZone.style.height = "100vh";
+    missZone.style.pointerEvents = "auto";
+  } else {
+    missZone.style.display = "none";
+  }
+}
+
+document.getElementById("missZone").addEventListener("click", (e) => {
+  const board = document.getElementById("board");
+  const rect = board.getBoundingClientRect();
+  const clickX = e.clientX - rect.left - rect.width / 2;
+  const clickY = e.clientY - rect.top - rect.height / 2;
+  const distanceFromCenter = Math.sqrt(clickX * clickX + clickY * clickY);
+
+  // Miss nur wenn außerhalb der Scheibe (Radius ~230 in Board-Koordinaten)
+  const boardRadius = (rect.width / 520) * 230;
+  if (distanceFromCenter > boardRadius) {
+    recordThrow(0, 0, "Miss");
+  }
 });
 
 // init
