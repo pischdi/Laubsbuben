@@ -1182,6 +1182,8 @@ function recordThrow(num, mult, label) {
   state.currentVisit.push(dart);
 
   const p = state.currentPlayer;
+  const dbg = `P${p}:${label}(${state.currentVisit.length})`;
+  console.log(`[recordThrow] ${dbg}`);
   const before = state.scores[p];
   const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
   const after = before - visitSum;
@@ -1345,7 +1347,10 @@ function finalizeTurn(bust) {
   state.currentVisit = [];
   // Advance to next active player
   const ai = state.activePlayerIndices.indexOf(p);
-  state.currentPlayer = state.activePlayerIndices[(ai + 1) % state.activePlayerIndices.length];
+  const nextPlayer = state.activePlayerIndices[(ai + 1) % state.activePlayerIndices.length];
+  const dbg = `finalize P${p}→P${nextPlayer} (active=${state.activePlayerIndices.length})`;
+  console.log(`[finalizeTurn] ${dbg}`);
+  state.currentPlayer = nextPlayer;
   renderAll();
 }
 
