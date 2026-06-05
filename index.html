@@ -2693,38 +2693,37 @@ document.getElementById("toggleFullscreen").addEventListener("click", () => {
   updateMissZone();
 });
 
-// Miss-Zone: Klicks außerhalb der Scheibe registrieren als Miss
+// Miss-Zone: Klicks auf SVG-Hintergrund registrieren als Miss
 function updateMissZone() {
-  const missZone = document.getElementById("missZone");
   const board = document.getElementById("board");
-  const boardWrap = document.getElementById("boardWrap");
-
   if (document.body.classList.contains("fullscreen-board")) {
-    missZone.style.display = "block";
-    missZone.style.position = "fixed";
-    missZone.style.top = "0";
-    missZone.style.left = "0";
-    missZone.style.width = "100vw";
-    missZone.style.height = "100vh";
-    missZone.style.pointerEvents = "auto";
+    board.style.cursor = "crosshair";
   } else {
-    missZone.style.display = "none";
+    board.style.cursor = "auto";
   }
 }
 
-document.getElementById("missZone").addEventListener("click", (e) => {
+// SVG Click-Handler für Miss-Zone
+document.getElementById("board").addEventListener("click", (e) => {
+  if (!document.body.classList.contains("fullscreen-board")) return;
+
+  // Check if click was on SVG background, not on a field
+  if (e.target !== document.getElementById("board")) return;
+
   const board = document.getElementById("board");
   const rect = board.getBoundingClientRect();
-  const clickX = e.clientX - rect.left - rect.width / 2;
-  const clickY = e.clientY - rect.top - rect.height / 2;
-  const distanceFromCenter = Math.sqrt(clickX * clickX + clickY * clickY);
+  const svg = board;
 
-  // Miss nur wenn außerhalb der Scheibe (Radius ~230 in Board-Koordinaten)
-  const boardRadius = (rect.width / 520) * 230;
-  if (distanceFromCenter > boardRadius) {
+  // Convert screen coords to SVG viewBox coords
+  const svgX = (e.clientX - rect.left) / rect.width * 520 - 260;
+  const svgY = (e.clientY - rect.top) / rect.height * 520 - 260;
+  const distanceFromCenter = Math.sqrt(svgX * svgX + svgY * svgY);
+
+  // Miss wenn außerhalb Radius 230 (Dartscheibe endet bei ~230)
+  if (distanceFromCenter > 230) {
     recordThrow(0, 0, "Miss");
   }
-});
+}, true); // capture phase!
 
 // init
 buildBoard();
