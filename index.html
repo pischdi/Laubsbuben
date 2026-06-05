@@ -2737,6 +2737,9 @@ function updateMissZone() {
 document.getElementById("board").addEventListener("click", (e) => {
   if (!document.body.classList.contains("fullscreen-board")) return;
 
+  // Ignore clicks on buttons or other controls
+  if (e.target.tagName === "BUTTON" || e.target.closest("button")) return;
+
   // Check if click was on SVG background, not on a field
   if (e.target !== document.getElementById("board")) return;
 
