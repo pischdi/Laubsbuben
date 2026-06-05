@@ -2686,11 +2686,22 @@ document.getElementById("historyImport").addEventListener("click", () => {
 });
 
 // Fullscreen board toggle
-document.getElementById("toggleFullscreen").addEventListener("click", () => {
+function toggleFullscreen() {
   document.body.classList.toggle("fullscreen-board");
   const btn = document.getElementById("toggleFullscreen");
-  btn.textContent = document.body.classList.contains("fullscreen-board") ? "✕ Normal" : "⛶ Vollbild";
+  if (btn) {
+    btn.textContent = document.body.classList.contains("fullscreen-board") ? "✕ Normal" : "⛶ Vollbild";
+  }
   updateMissZone();
+}
+
+document.getElementById("toggleFullscreen").addEventListener("click", toggleFullscreen);
+
+// Escape key exits fullscreen
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.body.classList.contains("fullscreen-board")) {
+    toggleFullscreen();
+  }
 });
 
 // Miss-Zone: Klicks auf SVG-Hintergrund registrieren als Miss
