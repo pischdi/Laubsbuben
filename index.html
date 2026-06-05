@@ -2720,7 +2720,11 @@ function toggleFullscreen() {
 }
 
 document.getElementById("toggleFullscreen").addEventListener("click", toggleFullscreen);
-document.getElementById("fullscreenExit").addEventListener("click", toggleFullscreen);
+document.getElementById("fullscreenExit").addEventListener("click", (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+  toggleFullscreen();
+});
 
 // Escape key exits fullscreen
 document.addEventListener("keydown", (e) => {
