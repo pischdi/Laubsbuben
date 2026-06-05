@@ -2733,30 +2733,24 @@ function updateMissZone() {
   }
 }
 
-// SVG Click-Handler für Miss-Zone
+// SVG Click-Handler für Miss-Zone (bubble phase, nicht capture)
 document.getElementById("board").addEventListener("click", (e) => {
   if (!document.body.classList.contains("fullscreen-board")) return;
-
-  // Ignore clicks on buttons or other controls
-  if (e.target.tagName === "BUTTON" || e.target.closest("button")) return;
-
-  // Check if click was on SVG background, not on a field
   if (e.target !== document.getElementById("board")) return;
 
   const board = document.getElementById("board");
   const rect = board.getBoundingClientRect();
-  const svg = board;
 
   // Convert screen coords to SVG viewBox coords
   const svgX = (e.clientX - rect.left) / rect.width * 520 - 260;
   const svgY = (e.clientY - rect.top) / rect.height * 520 - 260;
   const distanceFromCenter = Math.sqrt(svgX * svgX + svgY * svgY);
 
-  // Miss wenn außerhalb Radius 230 (Dartscheibe endet bei ~230)
+  // Miss wenn außerhalb Radius 230
   if (distanceFromCenter > 230) {
     recordThrow(0, 0, "Miss");
   }
-}, true); // capture phase!
+});
 
 // init
 buildBoard();
