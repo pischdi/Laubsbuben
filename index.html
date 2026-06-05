@@ -2801,9 +2801,8 @@ function updateMissZone() {
   }
 }
 
-// SVG Click/Touch-Handler für Miss-Zone
+// SVG Click/Touch-Handler für Miss-Zone (alle Modi)
 document.getElementById("board").addEventListener("click", (e) => {
-  if (!document.body.classList.contains("fullscreen-board")) return;
   if (e.target !== document.getElementById("board")) return;
 
   const board = document.getElementById("board");
@@ -2819,7 +2818,6 @@ document.getElementById("board").addEventListener("click", (e) => {
 
 // Touch support für iOS
 document.getElementById("board").addEventListener("touchend", (e) => {
-  if (!document.body.classList.contains("fullscreen-board")) return;
   if (e.target !== document.getElementById("board")) return;
 
   const board = document.getElementById("board");
