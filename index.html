@@ -600,6 +600,23 @@
   body.fullscreen-board .panel h2 {
     display: none;
   }
+  #fullscreenExit {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+    padding: 10px 15px;
+    background: var(--accent);
+    border: none;
+    color: white;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: none;
+  }
+  body.fullscreen-board #fullscreenExit {
+    display: block;
+  }
   body.fullscreen-board .board-wrap {
     width: 100%;
     height: 100%;
@@ -625,6 +642,7 @@
 </style>
 </head>
 <body>
+<button id="fullscreenExit">✕ Normal</button>
 <div class="app">
   <div class="topbar">
     <h1><span>●</span> Steel Dart Zähler</h1>
@@ -2696,6 +2714,7 @@ function toggleFullscreen() {
 }
 
 document.getElementById("toggleFullscreen").addEventListener("click", toggleFullscreen);
+document.getElementById("fullscreenExit").addEventListener("click", toggleFullscreen);
 
 // Escape key exits fullscreen
 document.addEventListener("keydown", (e) => {
