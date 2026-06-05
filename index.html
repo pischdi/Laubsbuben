@@ -2801,17 +2801,21 @@ function updateMissZone() {
   }
 }
 
-// SVG Click/Touch-Handler für Miss-Zone (alle Modi)
+// SVG Click/Touch-Handler für Miss-Zone (nur auf Scheiben-Bereich)
 document.getElementById("board").addEventListener("click", (e) => {
   if (e.target !== document.getElementById("board")) return;
 
   const board = document.getElementById("board");
   const rect = board.getBoundingClientRect();
+
+  // Nur wenn auf der Scheibe oder direkt daneben (rechte Seite)
+  // Ignoriere Klicks auf der linken Seite (Scoreboard)
   const svgX = (e.clientX - rect.left) / rect.width * 520 - 260;
   const svgY = (e.clientY - rect.top) / rect.height * 520 - 260;
   const distanceFromCenter = Math.sqrt(svgX * svgX + svgY * svgY);
 
-  if (distanceFromCenter > 230) {
+  // Miss nur wenn deutlich außerhalb der Scheibe (Radius 230)
+  if (distanceFromCenter > 240) {
     recordThrow(0, 0, "Miss");
   }
 });
@@ -2827,7 +2831,7 @@ document.getElementById("board").addEventListener("touchend", (e) => {
   const svgY = (touch.clientY - rect.top) / rect.height * 520 - 260;
   const distanceFromCenter = Math.sqrt(svgX * svgX + svgY * svgY);
 
-  if (distanceFromCenter > 230) {
+  if (distanceFromCenter > 240) {
     recordThrow(0, 0, "Miss");
   }
 });
