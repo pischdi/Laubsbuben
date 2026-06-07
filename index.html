@@ -2735,8 +2735,9 @@ document.addEventListener("keydown", (e) => {
 
 // Victory sound (fanfare + applause)
 function playVictorySound() {
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const now = audioContext.currentTime;
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioContext.currentTime;
 
   // Fanfare: G-B-D-G (ascending)
   const notes = [392, 494, 587, 784];
@@ -2770,6 +2771,9 @@ function playVictorySound() {
     gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
     source.start(audioContext.currentTime);
   }, 800);
+  } catch (e) {
+    console.warn("Audio not supported", e);
+  }
 }
 
 // Miss roast (random comments)
@@ -2783,12 +2787,16 @@ const missComments = [
 ];
 
 function playMissComment() {
-  const comment = missComments[Math.floor(Math.random() * missComments.length)];
-  const utterance = new SpeechSynthesisUtterance(comment);
-  utterance.lang = "de-DE";
-  utterance.rate = 1.2;
-  utterance.pitch = 1.1;
-  speechSynthesis.speak(utterance);
+  try {
+    const comment = missComments[Math.floor(Math.random() * missComments.length)];
+    const utterance = new SpeechSynthesisUtterance(comment);
+    utterance.lang = "de-DE";
+    utterance.rate = 1.2;
+    utterance.pitch = 1.1;
+    speechSynthesis.speak(utterance);
+  } catch (e) {
+    console.warn("TTS not supported", e);
+  }
 }
 
 // Miss-Zone: Klicks auf SVG-Hintergrund registrieren als Miss
