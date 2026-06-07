@@ -643,6 +643,20 @@
   body.fullscreen-board .panel:first-child {
     display: none !important;
   }
+
+  @keyframes missToastFade {
+    0% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+  }
 </style>
 </head>
 <body>
@@ -2791,19 +2805,37 @@ const missComments = [
 ];
 
 function playMissComment() {
-  try {
-    speechSynthesis.cancel(); // clear any pending
-    const comment = missComments[Math.floor(Math.random() * missComments.length)];
-    const utterance = new SpeechSynthesisUtterance(comment);
-    utterance.lang = "de-DE";
-    utterance.rate = 1.2;
-    utterance.pitch = 1.1;
-    utterance.volume = 1.0; // max volume
-    speechSynthesis.speak(utterance);
-    console.log("Miss comment:", comment);
-  } catch (e) {
-    console.warn("TTS not supported", e);
-  }
+  const comment = missComments[Math.floor(Math.random() * missComments.length)];
+
+  // Remove any existing toast
+  const existing = document.getElementById("missToast");
+  if (existing) existing.remove();
+
+  // Create toast element
+  const toast = document.createElement("div");
+  toast.id = "missToast";
+  toast.textContent = comment;
+  toast.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 100, 100, 0.95);
+    color: white;
+    padding: 20px 40px;
+    border-radius: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 10000;
+    pointer-events: none;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    animation: missToastFade 2s ease-out forwards;
+  `;
+  document.body.appendChild(toast);
+
+  // Auto-remove after animation
+  setTimeout(() => toast.remove(), 2000);
 }
 
 // Miss-Zone: Klicks auf SVG-Hintergrund registrieren als Miss
