@@ -632,10 +632,10 @@
     margin: 0;
   }
   body.fullscreen-board svg.board {
-    max-width: 90vh;
-    max-height: 90vh;
-    width: 90vh;
-    height: 90vh;
+    max-width: 100vh;
+    max-height: 100vh;
+    width: 100vh;
+    height: 100vh;
     flex-shrink: 0;
   }
   body.fullscreen-board .extra-row,
@@ -2792,12 +2792,15 @@ const missComments = [
 
 function playMissComment() {
   try {
+    speechSynthesis.cancel(); // clear any pending
     const comment = missComments[Math.floor(Math.random() * missComments.length)];
     const utterance = new SpeechSynthesisUtterance(comment);
     utterance.lang = "de-DE";
     utterance.rate = 1.2;
     utterance.pitch = 1.1;
+    utterance.volume = 1.0; // max volume
     speechSynthesis.speak(utterance);
+    console.log("Miss comment:", comment);
   } catch (e) {
     console.warn("TTS not supported", e);
   }
