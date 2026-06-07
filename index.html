@@ -2810,25 +2810,8 @@ function updateMissZone() {
 }
 
 // SVG Click/Touch-Handler für Miss-Zone (nur auf Scheiben-Bereich)
-document.getElementById("board").addEventListener("click", (e) => {
-  if (e.target !== document.getElementById("board")) return;
+let touchHandled = false;
 
-  const board = document.getElementById("board");
-  const rect = board.getBoundingClientRect();
-
-  // Nur wenn auf der Scheibe oder direkt daneben (rechte Seite)
-  // Ignoriere Klicks auf der linken Seite (Scoreboard)
-  const svgX = (e.clientX - rect.left) / rect.width * 520 - 260;
-  const svgY = (e.clientY - rect.top) / rect.height * 520 - 260;
-  const distanceFromCenter = Math.sqrt(svgX * svgX + svgY * svgY);
-
-  // Miss nur wenn deutlich außerhalb der Scheibe (Radius 230)
-  if (distanceFromCenter > 240) {
-    recordThrow(0, 0, "Miss");
-  }
-});
-
-// Touch support für iOS
 document.getElementById("board").addEventListener("touchend", (e) => {
   if (e.target !== document.getElementById("board")) return;
 
@@ -2837,6 +2820,23 @@ document.getElementById("board").addEventListener("touchend", (e) => {
   const rect = board.getBoundingClientRect();
   const svgX = (touch.clientX - rect.left) / rect.width * 520 - 260;
   const svgY = (touch.clientY - rect.top) / rect.height * 520 - 260;
+  const distanceFromCenter = Math.sqrt(svgX * svgX + svgY * svgY);
+
+  if (distanceFromCenter > 240) {
+    touchHandled = true;
+    recordThrow(0, 0, "Miss");
+    setTimeout(() => { touchHandled = false; }, 100);
+  }
+}, false);
+
+document.getElementById("board").addEventListener("click", (e) => {
+  if (e.target !== document.getElementById("board")) return;
+  if (touchHandled) return; // Skip if just handled as touch
+
+  const board = document.getElementById("board");
+  const rect = board.getBoundingClientRect();
+  const svgX = (e.clientX - rect.left) / rect.width * 520 - 260;
+  const svgY = (e.clientY - rect.top) / rect.height * 520 - 260;
   const distanceFromCenter = Math.sqrt(svgX * svgX + svgY * svgY);
 
   if (distanceFromCenter > 240) {
