@@ -1010,6 +1010,7 @@ function startNewMatch() {
   // Tournament needs at least 2 players. Below 2, fall back to single match.
   const useTournament = state.tournament.active && state.players.length >= 2;
   if (useTournament) {
+    // Always generate fresh pairings (even if tournament was already finished)
     state.tournament.schedule = generateRoundRobin(state.players.length);
     state.tournament.currentIdx = 0;
     state.tournament.finished = false;
@@ -2804,8 +2805,9 @@ function playMissComment() {
       utterance.voice = voices[0];
     }
 
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    // Optimiert: langsamer & deutlicher
+    utterance.rate = 0.8;
+    utterance.pitch = 0.95;
     utterance.volume = 1.0;
     speechSynthesis.speak(utterance);
   } catch (e) {
