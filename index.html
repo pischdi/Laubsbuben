@@ -598,7 +598,11 @@
     overflow: hidden;
   }
   body.fullscreen-board .panel h2 {
-    display: none;
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.fullscreen-board .view-game .panel h2 {
+    display: none !important;
   }
   #fullscreenExit {
     position: fixed;
