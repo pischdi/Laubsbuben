@@ -172,12 +172,14 @@
     gap: 10px;
   }
   /* Die Hoehe muss begrenzt sein, sonst schiebt das Board auf einem Tablet im
-     Querformat die Knopfreihe und die Legende unter den Bildschirmrand. Abgezogen
-     werden Kopfzeile, Ueberschrift, Knopfreihe und Legende. dvh statt vh, weil
-     Android die Systemleisten mitzaehlt. */
+     Querformat die Knopfreihe unter den Bildschirmrand. Abgezogen wird nur, was
+     wirklich darunter steht. dvh statt vh, weil Android die Systemleisten
+     mitzaehlt. Auf flachen Bildschirmen (siehe unten) faellt die Legende weg,
+     dann bleibt entsprechend mehr fuer die Scheibe - und groesser heisst hier
+     auch: besser zu treffen. */
   svg.board {
     width: 100%; max-width: 900px; height: auto; display: block;
-    max-height: calc(100dvh - 230px);
+    max-height: calc(100dvh - 235px);
     touch-action: manipulation;
   }
   svg.board path, svg.board circle {
@@ -664,6 +666,15 @@
   body.fullscreen-board .legend,
   body.fullscreen-board .panel:first-child {
     display: none !important;
+  }
+
+  /* Flache Bildschirme: Tablet im Querformat, Laptop. Hier zaehlt jeder
+     Pixel fuer die Scheibe, weil man sie mit dem Finger trifft.
+     Steht bewusst am Ende - sonst gewinnt die spaetere .legend-Regel. */
+  @media (max-height: 950px) {
+    svg.board { max-height: calc(100dvh - 205px); }
+    .legend { display: none; }
+    .extra-row button { padding: 9px 10px; }
   }
 
 </style>
