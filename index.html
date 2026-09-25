@@ -557,6 +557,7 @@
   /* Fullscreen Board */
   body.fullscreen-board {
     overflow: hidden;
+    --fs-seite: clamp(120px, 17vw, 250px);
   }
   body.fullscreen-board .app {
     max-width: 100%;
@@ -652,7 +653,7 @@
      nicht, weil Flex-Kinder ohne min-height:0 ueber ihren Kasten hinauswachsen -
      dann ragt die Scheibe oben und unten aus dem Bild. */
   body.fullscreen-board svg.board {
-    width: min(100dvh, 100%);
+    width: min(100dvh, calc(100% - 2 * var(--fs-seite) - 16px));
     height: auto;
     max-width: 100%;
     max-height: 100dvh;
@@ -677,10 +678,60 @@
     .extra-row button { padding: 9px 10px; }
   }
 
+  /* Vollbild: Spielstand links und rechts neben der Scheibe.
+     Im Vollbild war der Platz an den Seiten bisher leer, waehrend der
+     Spielstand ganz ausgeblendet war - man musste zum Ablesen zurueck in die
+     normale Ansicht. */
+  #fsScores { display: none; }
+  body.fullscreen-board #fsScores {
+    display: block;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;   /* die Scheibe darunter bleibt bedienbar */
+    z-index: 50;
+  }
+  body.fullscreen-board .fs-side {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--fs-seite);
+    padding: 0 10px;
+    text-align: center;
+  }
+  body.fullscreen-board #fsLeft  { left: max(6px, env(safe-area-inset-left)); }
+  body.fullscreen-board #fsRight { right: max(6px, env(safe-area-inset-right)); }
+
+  .fs-name {
+    font-size: clamp(14px, 2.1vh, 22px); font-weight: 700;
+    color: var(--muted); letter-spacing: .02em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .fs-rest {
+    font-size: clamp(40px, 11vh, 120px); font-weight: 800; line-height: 1;
+    font-variant-numeric: tabular-nums; margin: 2px 0 4px;
+  }
+  .fs-side.am-zug .fs-name { color: var(--accent); }
+  .fs-side.am-zug .fs-rest { color: var(--accent); }
+  .fs-meta { font-size: clamp(11px, 1.6vh, 16px); color: var(--muted); }
+  .fs-darts {
+    display: flex; gap: 4px; justify-content: center; margin-top: 8px;
+  }
+  .fs-darts div {
+    flex: 1; min-width: 0; padding: 4px 2px; border-radius: 5px;
+    background: var(--panel); border: 1px solid var(--line);
+    font-size: clamp(10px, 1.5vh, 15px); font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .fs-legs { font-size: clamp(11px, 1.7vh, 17px); margin-top: 6px; }
+
 </style>
 </head>
 <body>
 <button id="fullscreenExit">✕ Normal</button>
+<div id="fsScores" aria-hidden="true">
+  <div class="fs-side" id="fsLeft"></div>
+  <div class="fs-side" id="fsRight"></div>
+</div>
 <div class="app">
   <div class="topbar">
     <h1><span>●</span> Steel Dart Zähler</h1>
@@ -1823,6 +1874,64 @@ function renderHistoryList() {
   histList.innerHTML = items.join("");
 }
 
+// Vollbild: Spielstand links und rechts. Bei zwei Spielern ist das genau einer
+// je Seite; bei mehr wird abwechselnd verteilt, damit beide Seiten gleich voll
+// sind. Gefuettert wird aus demselben Zustand wie das normale Scoreboard, es
+// gibt also keine zweite Wahrheit.
+function renderVollbildStand() {
+  const links = document.getElementById("fsLeft");
+  const rechts = document.getElementById("fsRight");
+  if (!links || !rechts) return;
+  if (!document.body.classList.contains("fullscreen-board")) {
+    links.innerHTML = ""; rechts.innerHTML = "";
+    return;
+  }
+
+  const indices = state.activePlayerIndices.length > 0
+    ? state.activePlayerIndices
+    : state.players.map((_, i) => i);
+  const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
+  const zeigeLegs = state.legsToWin > 1;
+
+  const seite = (i) => {
+    const pl = state.players[i];
+    const amZug = i === state.currentPlayer
+                  && state.matchWinner === -1 && state.legWinner === -1;
+    const rest = amZug ? state.scores[i] - visitSum : state.scores[i];
+    const aufnahmen = state.history.filter(h => h.playerIdx === i).length;
+
+    let krone = "";
+    if (i === state.matchWinner) krone = " 🏆";
+    else if (i === state.legWinner) krone = " 🎯";
+
+    let darts = "";
+    if (amZug) {
+      darts = '<div class="fs-darts">' +
+        [0, 1, 2].map(d => {
+          const w = state.currentVisit[d];
+          return `<div>${w ? escapeHtml(w.label) : "–"}</div>`;
+        }).join("") + "</div>";
+    }
+
+    return {
+      amZug,
+      html: `<div class="fs-name">${escapeHtml(pl.name)}${krone}</div>
+             <div class="fs-rest">${rest}</div>
+             <div class="fs-meta">Aufnahmen: ${aufnahmen}</div>
+             ${zeigeLegs ? `<div class="fs-legs">Legs: ${state.legsWon[i]}</div>` : ""}
+             ${darts}`
+    };
+  };
+
+  const bauen = (ziel, liste) => {
+    ziel.innerHTML = liste.map(i => seite(i).html).join('<hr style="opacity:.15;margin:14px 0">');
+    ziel.classList.toggle("am-zug", liste.some(i => seite(i).amZug));
+  };
+
+  bauen(links, indices.filter((_, n) => n % 2 === 0));
+  bauen(rechts, indices.filter((_, n) => n % 2 === 1));
+}
+
 function renderScoreboard() {
   const sb = document.getElementById("scoreboard");
   sb.innerHTML = "";
@@ -1916,6 +2025,8 @@ function renderScoreboard() {
     header = "Spielstand";
   }
   hdr.textContent = header;
+
+  renderVollbildStand();
 }
 
 function renderTournament() {
@@ -2817,6 +2928,7 @@ function toggleFullscreen() {
   const an = document.body.classList.toggle("fullscreen-board");
   browserVollbild(an);
   beschriftungAktualisieren();
+  renderVollbildStand();
   updateMissZone();
 }
 
