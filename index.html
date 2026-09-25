@@ -634,6 +634,23 @@
   body.fullscreen-board #fullscreenExit {
     display: block;
   }
+  /* Seit der ganze Hintergrund als Miss zaehlt, braucht es im Vollbild einen
+     Weg zurueck - die Knopfreihe mit "Letzter Wurf" ist dort ausgeblendet. */
+  #fsUndo { display: none; }
+  body.fullscreen-board #fsUndo {
+    display: block;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+    padding: 10px 15px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
   body.fullscreen-board .board-wrap {
     width: 100%;
     height: 100%;
@@ -695,9 +712,14 @@
   }
   /* Die Scheibe muss ueber der Miss-Flaeche liegen, sonst faengt diese alles ab. */
   body.fullscreen-board .board-wrap { position: relative; z-index: 2; }
-  /* Die Spalten fangen ihre Klicks selbst ab - wer den Punktestand antippt,
-     wirft damit keinen Miss. */
-  body.fullscreen-board .fs-side { pointer-events: auto; }
+  /* Im Vollbild nimmt NUR die Scheibe selbst Klicks an. Alles andere faellt auf
+     die Miss-Flaeche durch: der Rand zwischen Scheibe und Spalten, die Streifen
+     oben und unten, und die Punktespalten. Vorher schluckten board-wrap (voll
+     breit) und die Spalten die Klicks - "daneben" wirkte nur in schmalen
+     Streifen und schien zufaellig zu funktionieren. */
+  body.fullscreen-board .board-wrap { pointer-events: none; }
+  body.fullscreen-board svg.board { pointer-events: auto; }
+  body.fullscreen-board .fs-side { pointer-events: none; }
 
   #fsScores { display: none; }
   body.fullscreen-board #fsScores {
@@ -723,8 +745,11 @@
     color: var(--muted); letter-spacing: .02em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* Auch hier gilt die Spaltenbreite, nicht nur die Hoehe: bei 1024x768 ragte
+     eine dreistellige Restpunktzahl aus der Spalte heraus. */
   .fs-rest {
-    font-size: clamp(40px, 11vh, 120px); font-weight: 800; line-height: 1;
+    font-size: clamp(34px, min(11vh, var(--fs-seite, 200px) / 2.6), 120px);
+    font-weight: 800; line-height: 1;
     font-variant-numeric: tabular-nums; margin: 2px 0 4px;
   }
   .fs-side.am-zug .fs-name { color: var(--accent); }
@@ -733,12 +758,26 @@
   .fs-darts {
     display: flex; gap: 4px; justify-content: center; margin-top: 8px;
   }
+  /* Zwei Zeilen statt einer: oben klein der Multiplikator, darunter gross die
+     Zahl. "Triple 20" in einer Zeile sprengte den Kasten - drei davon teilen
+     sich die Spaltenbreite. So stehen nie mehr als zwei Zeichen nebeneinander,
+     und die Zahl darf deutlich groesser sein als vorher die ganze Zeile.
+     Die Schrift haengt zusaetzlich an der Spaltenbreite, nicht nur an der
+     Bildschirmhoehe - sonst passt es auf schmalen Geraeten wieder nicht. */
   .fs-darts div {
-    flex: 1; min-width: 0; padding: 8px 2px; border-radius: 7px;
+    flex: 1; min-width: 0; padding: 6px 2px; border-radius: 7px;
     background: var(--panel); border: 1px solid var(--line);
-    font-size: clamp(16px, 3.2vh, 34px); font-weight: 700;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: clamp(16px, min(4.4vh, var(--fs-seite, 200px) / 4.5), 40px);
+    font-weight: 700;
+    display: flex; flex-direction: column; align-items: center;
+    line-height: 1.05;
+    overflow: hidden;
   }
+  .fs-d-oben {
+    font-size: .45em; font-weight: 600; color: var(--muted);
+    letter-spacing: .02em; white-space: nowrap;
+  }
+  .fs-d-gross { font-variant-numeric: tabular-nums; white-space: nowrap; }
   /* Die letzte Aufnahme des Gegners steht blasser da - sie ist Vergangenheit,
      soll aber lesbar bleiben, bis derjenige wieder wirft. */
   .fs-darts.vorherige div { opacity: .55; }
@@ -748,6 +787,7 @@
 </head>
 <body>
 <button id="fullscreenExit">✕ Normal</button>
+<button id="fsUndo" title="Letzter Wurf zurück">↶ Zurück</button>
 <div id="fsMiss" title="daneben"></div>
 <div id="fsScores" aria-hidden="true">
   <div class="fs-side" id="fsLeft"></div>
@@ -1000,6 +1040,10 @@ function buildBoardFull() {
   back.setAttribute("cx", 0); back.setAttribute("cy", 0);
   back.setAttribute("r", 250);
   back.setAttribute("fill", COLOR.bgRing);
+  // Der schwarze Rand ausserhalb der Doppel ist auf einer echten Scheibe kein
+  // Feld. Er liegt unter den Segmenten, sichtbar bleibt nur der Aussenring -
+  // ein Treffer dort zaehlt null. Ohne diesen Handler passierte gar nichts.
+  back.addEventListener("click", () => recordThrow(0, 0, "Miss"));
   svg.appendChild(back);
 
   for (let i = 0; i < 20; i++) {
@@ -1899,6 +1943,17 @@ function renderHistoryList() {
 // je Seite; bei mehr wird abwechselnd verteilt, damit beide Seiten gleich voll
 // sind. Gefuettert wird aus demselben Zustand wie das normale Scoreboard, es
 // gibt also keine zweite Wahrheit.
+// Kurzform fuer die schmalen Kaesten im Vollbild. Die ausgeschriebene Form
+// ("Triple 20") bleibt ueberall sonst erhalten - in der Ansage, im Verlauf und
+// in der normalen Ansicht, wo genug Platz ist.
+function kurzWurf(w) {
+  if (!w) return { oben: "", gross: "–" };
+  if (w.label === "Miss" || w.mult === 0) return { oben: "Miss", gross: "0" };
+  if (w.num === 25) return { oben: "Bull", gross: String(25 * w.mult) };
+  if (w.mult > 1) return { oben: w.mult + "×", gross: String(w.num) };
+  return { oben: "", gross: String(w.num) };
+}
+
 function renderVollbildStand() {
   const links = document.getElementById("fsLeft");
   const rechts = document.getElementById("fsRight");
@@ -1940,8 +1995,9 @@ function renderVollbildStand() {
     if (wuerfe) {
       darts = `<div class="fs-darts${vorherige ? " vorherige" : ""}">` +
         [0, 1, 2].map(d => {
-          const w = wuerfe[d];
-          return `<div>${w ? escapeHtml(w.label) : "–"}</div>`;
+          const k = kurzWurf(wuerfe[d]);
+          return `<div><span class="fs-d-oben">${escapeHtml(k.oben) || "&nbsp;"}</span>`
+               + `<span class="fs-d-gross">${escapeHtml(k.gross)}</span></div>`;
         }).join("") + "</div>";
     }
 
@@ -2793,6 +2849,10 @@ function maybeRestartFromSetting() {
   document.getElementById(id).addEventListener("change", maybeRestartFromSetting);
 });
 document.getElementById("undoLast").addEventListener("click", undoLastDart);
+document.getElementById("fsUndo").addEventListener("click", (e) => {
+  e.stopPropagation();
+  undoLastDart();
+});
 document.getElementById("undoTurn").addEventListener("click", undoTurn);
 
 // TTS settings

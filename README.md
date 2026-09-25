@@ -22,8 +22,9 @@ keine Build-Tools, keine externen Abhängigkeiten.
 - **Persistente Spieler-Liste** (Schnellauswahl + Autocomplete im Setup,
   Filter-Chips im Verlauf)
 - **Setup wird gemerkt** und ist mit einem Klick wiederholbar
-- **Vollbild**: Klick neben die Scheibe zaehlt als Miss; Spielstand links und
-  rechts neben der Scheibe — Rest, Aufnahmen, Legs und die
+- **Vollbild**: alles ausser der Scheibe zaehlt als Miss - Rand, Streifen,
+  Punktespalten und der schwarze Aussenring. Knopf `↶ Zurück` oben links
+  nimmt einen Fehlgriff wieder weg. Spielstand links und rechts — Rest, Aufnahmen, Legs und die
   letzte Aufnahme, der Spieler am Zug farbig
 - **Checkout-Vorschläge** ab Restpunktzahl ≤ 170 (Double-Out)
 - **Verlauf-Export/Import** als JSON
