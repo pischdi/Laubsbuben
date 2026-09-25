@@ -1,6 +1,6 @@
 // Service Worker für Steel Dart Zähler — Cache-First mit Offline-Fallback.
 // Bei jedem Update der Versionsnummer wird der alte Cache gelöscht.
-const CACHE_VERSION = "dart-v4";
+const CACHE_VERSION = "dart-v5";
 const ASSETS = [
   "./",
   "./index.html",

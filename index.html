@@ -171,7 +171,15 @@
     display: flex; flex-direction: column; align-items: center;
     gap: 10px;
   }
-  svg.board { width: 100%; max-width: 900px; height: auto; display: block; touch-action: manipulation; }
+  /* Die Hoehe muss begrenzt sein, sonst schiebt das Board auf einem Tablet im
+     Querformat die Knopfreihe und die Legende unter den Bildschirmrand. Abgezogen
+     werden Kopfzeile, Ueberschrift, Knopfreihe und Legende. dvh statt vh, weil
+     Android die Systemleisten mitzaehlt. */
+  svg.board {
+    width: 100%; max-width: 900px; height: auto; display: block;
+    max-height: calc(100dvh - 230px);
+    touch-action: manipulation;
+  }
   svg.board path, svg.board circle {
     cursor: pointer;
     transition: filter .1s, opacity .1s;
@@ -551,8 +559,8 @@
   body.fullscreen-board .app {
     max-width: 100%;
     padding: 0;
-    min-height: 100vh;
-    max-height: 100vh;
+    min-height: 100dvh;
+    max-height: 100dvh;
     display: flex;
     flex-direction: column;
   }
@@ -568,10 +576,11 @@
     flex-direction: column;
     flex: 1;
     padding: 0;
-    height: 100vh;
+    height: 100dvh;
   }
   body.fullscreen-board .game-grid {
-    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
     grid-template-columns: 1fr;
     gap: 0;
     align-items: center;
@@ -591,6 +600,7 @@
   }
   body.fullscreen-board .panel:nth-child(2) {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -624,6 +634,7 @@
   body.fullscreen-board .board-wrap {
     width: 100%;
     height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -631,12 +642,23 @@
     padding: 0;
     margin: 0;
   }
+  /* Das Board ist quadratisch (viewBox 520x520). Hoehe vorgeben und die Breite
+     folgen lassen ist sicherer als beide auf 100vh zu setzen: so passt es auch,
+     wenn das Geraet breiter als hoch ist, und die Systemleisten fressen nichts weg. */
+  /* Das Board ist quadratisch (viewBox 520x520). Die Kante ist der kleinere der
+     beiden Werte: verfuegbare Hoehe oder verfuegbare Breite. "height: 100%" reicht
+     nicht, weil Flex-Kinder ohne min-height:0 ueber ihren Kasten hinauswachsen -
+     dann ragt die Scheibe oben und unten aus dem Bild. */
   body.fullscreen-board svg.board {
-    max-width: 100vh;
-    max-height: 100vh;
-    width: 100vh;
-    height: 100vh;
-    flex-shrink: 0;
+    width: min(100dvh, 100%);
+    height: auto;
+    max-width: 100%;
+    max-height: 100dvh;
+    flex-shrink: 1;
+  }
+  body.fullscreen-board .board-wrap {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
   body.fullscreen-board .extra-row,
   body.fullscreen-board .legend,
@@ -995,6 +1017,7 @@ const state = {
 };
 
 function startNewMatch() {
+  anwurfWeiterdrehen();
   state.mode = parseInt(document.getElementById("mode").value, 10);
   state.outRule = document.getElementById("outRule").value;
   state.legsToWin = Math.max(1, parseInt(document.getElementById("legsToWin").value, 10) || 1);
@@ -1016,7 +1039,7 @@ function startNewMatch() {
     state.tournament.finished = false;
     startTournamentMatch(0);
     const m = state.tournament.schedule[0];
-    setStatus(`Turnier gestartet – ${state.tournament.schedule.length} Begegnungen. Match 1: <strong>${escapeHtml(state.players[m.p1].name)}</strong> vs <strong>${escapeHtml(state.players[m.p2].name)}</strong>.`);
+    setStatus(`Turnier gestartet – ${state.tournament.schedule.length} Begegnungen. Match 1: <strong>${escapeHtml(state.players[m.p1].name)}</strong> vs <strong>${escapeHtml(state.players[m.p2].name)}</strong>. ${escapeHtml(state.players[state.currentPlayer].name)} beginnt.`);
   } else {
     state.tournament.active = false;
     state.tournament.schedule = [];
@@ -1036,7 +1059,8 @@ function initSingleMatch() {
   state.legs = [];
   state.history = [];
   state.currentVisit = [];
-  state.legStartPlayer = state.activePlayerIndices[0];
+  const n = state.activePlayerIndices.length;
+  state.legStartPlayer = state.activePlayerIndices[anwurfZaehler() % n];
   state.currentPlayer = state.legStartPlayer;
   state.legWinner = -1;
   state.matchWinner = -1;
@@ -1109,8 +1133,12 @@ function startTournamentMatch(idx) {
   state.legs = [];
   state.history = [];
   state.currentVisit = [];
-  state.legStartPlayer = m.p1;
-  state.currentPlayer = m.p1;
+  // Auch im Turnier wechselt der Anwurf: mal beginnt der Erste der Paarung,
+  // mal der Zweite. Der Match-Index geht mit ein, damit es innerhalb eines
+  // Turniers ebenfalls wechselt und nicht alle Partien gleich anfangen.
+  const beginner = ((anwurfZaehler() + idx) % 2 === 0) ? m.p1 : m.p2;
+  state.legStartPlayer = beginner;
+  state.currentPlayer = beginner;
   state.legWinner = -1;
   state.matchWinner = -1;
 }
@@ -2056,6 +2084,21 @@ function escapeHtml(s) {
 }
 
 // === Persistent setup (last settings) ===
+// Wer beginnt, soll nicht bei jedem neuen Match derselbe sein. Der Zaehler
+// ueberlebt den Neustart der App, damit die Reihenfolge auch am naechsten
+// Abend weiterlaeuft statt wieder bei Spieler 1 anzufangen.
+const ANWURF_KEY = "dart-counter:anwurf-v1";
+
+function anwurfZaehler() {
+  const n = parseInt(localStorage.getItem(ANWURF_KEY) || "0", 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function anwurfWeiterdrehen() {
+  try { localStorage.setItem(ANWURF_KEY, String((anwurfZaehler() + 1) % 100000)); }
+  catch (e) { /* ohne Speicher rotiert es eben nur innerhalb der Sitzung */ }
+}
+
 const SETUP_KEY = "dart-counter:setup-v1";
 
 function snapshotSetup() {
