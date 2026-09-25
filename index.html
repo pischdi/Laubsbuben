@@ -682,6 +682,23 @@
      Im Vollbild war der Platz an den Seiten bisher leer, waehrend der
      Spielstand ganz ausgeblendet war - man musste zum Ablesen zurueck in die
      normale Ansicht. */
+  /* Im Vollbild ist die Flaeche neben der Scheibe ein Miss. Vorher gab es dort
+     nichts zu treffen: der Miss-Knopf ist im Vollbild ausgeblendet, und die
+     Trefferpruefung haengt am SVG, das nur so breit ist wie die Scheibe hoch. */
+  #fsMiss { display: none; }
+  body.fullscreen-board #fsMiss {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    cursor: crosshair;
+  }
+  /* Die Scheibe muss ueber der Miss-Flaeche liegen, sonst faengt diese alles ab. */
+  body.fullscreen-board .board-wrap { position: relative; z-index: 2; }
+  /* Die Spalten fangen ihre Klicks selbst ab - wer den Punktestand antippt,
+     wirft damit keinen Miss. */
+  body.fullscreen-board .fs-side { pointer-events: auto; }
+
   #fsScores { display: none; }
   body.fullscreen-board #fsScores {
     display: block;
@@ -717,17 +734,21 @@
     display: flex; gap: 4px; justify-content: center; margin-top: 8px;
   }
   .fs-darts div {
-    flex: 1; min-width: 0; padding: 4px 2px; border-radius: 5px;
+    flex: 1; min-width: 0; padding: 8px 2px; border-radius: 7px;
     background: var(--panel); border: 1px solid var(--line);
-    font-size: clamp(10px, 1.5vh, 15px); font-weight: 600;
+    font-size: clamp(16px, 3.2vh, 34px); font-weight: 700;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* Die letzte Aufnahme des Gegners steht blasser da - sie ist Vergangenheit,
+     soll aber lesbar bleiben, bis derjenige wieder wirft. */
+  .fs-darts.vorherige div { opacity: .55; }
   .fs-legs { font-size: clamp(11px, 1.7vh, 17px); margin-top: 6px; }
 
 </style>
 </head>
 <body>
 <button id="fullscreenExit">✕ Normal</button>
+<div id="fsMiss" title="daneben"></div>
 <div id="fsScores" aria-hidden="true">
   <div class="fs-side" id="fsLeft"></div>
   <div class="fs-side" id="fsRight"></div>
@@ -1904,11 +1925,22 @@ function renderVollbildStand() {
     if (i === state.matchWinner) krone = " 🏆";
     else if (i === state.legWinner) krone = " 🎯";
 
+    // Die Wuerfe bleiben stehen, bis derjenige wieder wirft. Wer am Zug ist,
+    // aber noch nicht geworfen hat, sieht weiter seine letzte Aufnahme - sonst
+    // waere die Anzeige in genau dem Moment leer, in dem man sie braucht.
+    let wuerfe = null, vorherige = false;
+    if (amZug && state.currentVisit.length > 0) {
+      wuerfe = state.currentVisit;
+    } else {
+      const letzte = [...state.history].reverse().find(h => h.playerIdx === i);
+      if (letzte) { wuerfe = letzte.darts; vorherige = true; }
+    }
+
     let darts = "";
-    if (amZug) {
-      darts = '<div class="fs-darts">' +
+    if (wuerfe) {
+      darts = `<div class="fs-darts${vorherige ? " vorherige" : ""}">` +
         [0, 1, 2].map(d => {
-          const w = state.currentVisit[d];
+          const w = wuerfe[d];
           return `<div>${w ? escapeHtml(w.label) : "–"}</div>`;
         }).join("") + "</div>";
     }
@@ -3078,6 +3110,13 @@ document.getElementById("board").addEventListener("click", (e) => {
   if (distanceFromCenter > 240) {
     recordThrow(0, 0, "Miss");
   }
+});
+
+// Klick neben die Scheibe im Vollbild: Miss. Der Knopf "Miss (0)" ist dort
+// ausgeblendet, sonst gaebe es keinen Weg, einen Fehlwurf einzutragen.
+document.getElementById("fsMiss").addEventListener("click", () => {
+  if (!document.body.classList.contains("fullscreen-board")) return;
+  recordThrow(0, 0, "Miss");
 });
 
 // init
