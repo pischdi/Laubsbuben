@@ -778,6 +778,26 @@
     letter-spacing: .02em; white-space: nowrap;
   }
   .fs-d-gross { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Die Reihe mit dem zuletzt geworfenen Dart nimmt den Tipp entgegen und
+     macht ihn rueckgaengig. Sie ist die einzige Ausnahme von "alles ausser der
+     Scheibe ist ein Miss" - deshalb muss sie sichtbar anders aussehen. */
+  body.fullscreen-board .fs-darts.rueck {
+    pointer-events: auto; cursor: pointer;
+  }
+  body.fullscreen-board .fs-darts.rueck div {
+    border-color: var(--muted);
+    border-style: dashed;
+  }
+  body.fullscreen-board .fs-darts.rueck:active div {
+    background: var(--line);
+  }
+  .fs-rueck-hinweis {
+    pointer-events: none;
+    margin-top: 4px;
+    font-size: clamp(9px, 1.3vh, 13px);
+    color: var(--muted);
+    white-space: nowrap;
+  }
   /* Die letzte Aufnahme des Gegners steht blasser da - sie ist Vergangenheit,
      soll aber lesbar bleiben, bis derjenige wieder wirft. */
   .fs-darts.vorherige div { opacity: .55; }
@@ -1969,6 +1989,13 @@ function renderVollbildStand() {
   const visitSum = state.currentVisit.reduce((s, d) => s + d.value, 0);
   const zeigeLegs = state.legsToWin > 1;
 
+  // Nur die Reihe, in der der zuletzt geworfene Dart steht, ist antippbar.
+  // Sonst wuerde ein Tipp auf die Reihe des anderen Spielers dessen Wurf
+  // anzeigen, aber den eigenen loeschen.
+  let letzterWerfer = -1;
+  if (state.currentVisit.length > 0) letzterWerfer = state.currentPlayer;
+  else if (state.history.length > 0) letzterWerfer = state.history[state.history.length - 1].playerIdx;
+
   const seite = (i) => {
     const pl = state.players[i];
     const amZug = i === state.currentPlayer
@@ -1993,12 +2020,15 @@ function renderVollbildStand() {
 
     let darts = "";
     if (wuerfe) {
-      darts = `<div class="fs-darts${vorherige ? " vorherige" : ""}">` +
+      const rueck = (i === letzterWerfer);
+      darts = `<div class="fs-darts${vorherige ? " vorherige" : ""}${rueck ? " rueck" : ""}"`
+            + `${rueck ? ' title="Tippen nimmt den letzten Wurf zurück"' : ""}>` +
         [0, 1, 2].map(d => {
           const k = kurzWurf(wuerfe[d]);
           return `<div><span class="fs-d-oben">${escapeHtml(k.oben) || "&nbsp;"}</span>`
                + `<span class="fs-d-gross">${escapeHtml(k.gross)}</span></div>`;
-        }).join("") + "</div>";
+        }).join("") + "</div>"
+        + (rueck ? '<div class="fs-rueck-hinweis">↶ tippen = zurück</div>' : "");
     }
 
     return {
@@ -2018,6 +2048,14 @@ function renderVollbildStand() {
 
   bauen(links, indices.filter((_, n) => n % 2 === 0));
   bauen(rechts, indices.filter((_, n) => n % 2 === 1));
+
+  // Die Reihe wird bei jedem Rendern neu gebaut, der Handler also gleich mit.
+  document.querySelectorAll("#fsScores .fs-darts.rueck").forEach(el => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      undoLastDart();
+    });
+  });
 }
 
 function renderScoreboard() {

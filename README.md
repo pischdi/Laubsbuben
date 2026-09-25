@@ -23,8 +23,9 @@ keine Build-Tools, keine externen Abhängigkeiten.
   Filter-Chips im Verlauf)
 - **Setup wird gemerkt** und ist mit einem Klick wiederholbar
 - **Vollbild**: alles ausser der Scheibe zaehlt als Miss - Rand, Streifen,
-  Punktespalten und der schwarze Aussenring. Knopf `↶ Zurück` oben links
-  nimmt einen Fehlgriff wieder weg. Spielstand links und rechts — Rest, Aufnahmen, Legs und die
+  Punktespalten und der schwarze Aussenring. Zurueck geht auf zwei Wegen:
+  Tipp auf die gestrichelt umrandete Wurfreihe, oder Knopf `↶ Zurück`
+  oben links. Spielstand links und rechts — Rest, Aufnahmen, Legs und die
   letzte Aufnahme, der Spieler am Zug farbig
 - **Checkout-Vorschläge** ab Restpunktzahl ≤ 170 (Double-Out)
 - **Verlauf-Export/Import** als JSON
