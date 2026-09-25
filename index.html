@@ -1230,7 +1230,10 @@ function recordThrow(num, mult, label) {
                  || (state.outRule === "double" && after === 1)
                  || (isCheckoutAttempt && !isFinishingDartValid(mult));
 
-  speakThrow(label);
+  // Der einzelne Wurf wird bewusst NICHT angesagt. Beim Spielen steht man vor
+  // der Scheibe und weiss, was man geworfen hat - die Ansage jedes Feldes
+  // ("Triple 20") kommt dem Rhythmus in die Quere. Angesagt wird erst am Ende
+  // der Aufnahme die erzielte Punktzahl, weiter unten.
   renderScoreboard();
   renderStats();
 
@@ -1248,7 +1251,8 @@ function recordThrow(num, mult, label) {
   }
   if (isLastDart) {
     setStatus(`${state.players[p].name}: ${visitSum} – Aufnahme beendet.`);
-    speakThrow(`insgesamt ${visitSum}`);
+    // Wie beim echten Caller: erst die Aufnahme, dann der Rest.
+    speakThrow(`${visitSum}`);
     speakThrow(`Rest ${after}`);
     finalizeTurn(false);
   } else {
@@ -2724,14 +2728,56 @@ document.getElementById("historyImport").addEventListener("click", () => {
 });
 
 // Fullscreen board toggle
-function toggleFullscreen() {
-  document.body.classList.toggle("fullscreen-board");
+//
+// Zwei Dinge, die nichts miteinander zu tun haben und trotzdem zusammengehoeren:
+//   1. die Klasse "fullscreen-board" vergroessert das Board innerhalb der Seite
+//   2. die Fullscreen-API blendet die Browserleiste aus
+// Frueher passierte nur (1), die Adressleiste blieb stehen. Der Aufruf von
+// requestFullscreen() braucht eine Nutzergeste, deshalb steht er hier im
+// Klick-Handler und nicht beim Laden.
+function browserVollbild(an) {
+  try {
+    if (an) {
+      const el = document.documentElement;
+      const f = el.requestFullscreen || el.webkitRequestFullscreen;
+      // Auf dem iPhone gibt es die API nicht. Dort bleibt nur "Zum
+      // Home-Bildschirm hinzufuegen" - das Manifest steht auf standalone.
+      if (f) f.call(el).catch(() => {});
+    } else if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const x = document.exitFullscreen || document.webkitExitFullscreen;
+      if (x) x.call(document);
+    }
+  } catch (e) {
+    /* Vollbild ist Beiwerk - wenn es nicht geht, laeuft der Zaehler trotzdem */
+  }
+}
+
+function beschriftungAktualisieren() {
   const btn = document.getElementById("toggleFullscreen");
   if (btn) {
     btn.textContent = document.body.classList.contains("fullscreen-board") ? "✕ Normal" : "⛶ Vollbild";
   }
+}
+
+function toggleFullscreen() {
+  const an = document.body.classList.toggle("fullscreen-board");
+  browserVollbild(an);
+  beschriftungAktualisieren();
   updateMissZone();
 }
+
+// Wer mit F11 oder Escape aus dem Browser-Vollbild geht, soll nicht in einer
+// halben Ansicht landen: Klasse und Beschriftung ziehen nach.
+["fullscreenchange", "webkitfullscreenchange"].forEach((ev) => {
+  document.addEventListener(ev, () => {
+    const imVollbild = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (!imVollbild && document.body.classList.contains("fullscreen-board")) {
+      document.body.classList.remove("fullscreen-board");
+      beschriftungAktualisieren();
+      updateMissZone();
+    }
+  });
+});
 
 document.getElementById("toggleFullscreen").addEventListener("click", toggleFullscreen);
 document.getElementById("fullscreenExit").addEventListener("click", (e) => {
