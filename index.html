@@ -1364,13 +1364,31 @@ function speakThrow(label) {
     if (state.tts.voiceIdx > 0 && state.tts.voiceIdx < voices.length) {
       utterance.voice = voices[state.tts.voiceIdx];
     }
-    utterance.onend = () => {
+
+    // Weiterschalten muss genau einmal passieren, egal wie die Ansage endet.
+    // Vorher haing das allein am onend. Ein cancel() - etwa durch einen Miss-
+    // Kommentar - beendet die laufende Ansage aber mit *error*, nicht mit end.
+    // Dann wurde nie geshiftet, die Schlange blieb gefuellt, und weil neue
+    // Ansagen nur bei Laenge 1 starten, schwieg der Zaehler bis zum Neuladen.
+    let weiter = false;
+    const naechste = () => {
+      if (weiter) return;
+      weiter = true;
+      clearTimeout(notbremse);
       ttsQueue.shift();
       if (ttsQueue.length > 0) {
         ttsQueue[0]();
       }
     };
-    window.speechSynthesis.cancel();
+    // Sicherheitsnetz: geht ein end/error unterwegs verloren, darf die
+    // Schlange trotzdem nicht dauerhaft stehen bleiben.
+    const notbremse = setTimeout(naechste, 6000);
+
+    utterance.onend = naechste;
+    utterance.onerror = naechste;
+
+    // Kein cancel() mehr: es brachte genau die Ansage um, auf deren Ende die
+    // Schlange wartet. Die Reihenfolge regelt die Schlange selbst.
     window.speechSynthesis.speak(utterance);
   });
 
@@ -3144,7 +3162,10 @@ const missComments = [
 
 function playMissComment() {
   try {
-    speechSynthesis.cancel();
+    // Kein cancel() mehr: Es hat eine laufende Wurfansage abgewuergt und damit
+    // (vor dem onerror-Fix) die Ansage-Schlange dauerhaft blockiert. Die
+    // Sprachausgabe reiht von sich aus ein, der Kommentar kommt also einfach
+    // hinterher statt mittendrein.
     const comment = missComments[Math.floor(Math.random() * missComments.length)];
     const utterance = new SpeechSynthesisUtterance(comment);
     utterance.lang = "de-DE";
